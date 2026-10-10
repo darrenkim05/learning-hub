@@ -37,4 +37,5 @@ blue = positive, red = negative, yellow = look here now, purple = learned weight
 4. Add the page to `index.html` and commit to `main` with a clear message.
 
 ## Existing pages
+- `nn-basics-explorer.html`: ML → neurons → layers → backprop → live playground (real MLP + backprop in JS, gradient-checked) → bridge to CNNs. Prequel to the CNN page.
 - `phase0-cnn-explorer.html`: the FashionMNIST CNN from Phase 0, with a JSON weight loader and Colab export snippet.
