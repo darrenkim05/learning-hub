@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Learning Hub</title>
+<style>
+:root{--bg:#0b0d12;--panel:#141821;--line:#2a3140;--text:#e7eaf0;--muted:#98a2b3;--blue:#58c4dd;--yellow:#ffd23f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:32px 16px 60px}
+h1{font-size:30px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 24px}
+.track{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0;transition:border-color .2s}
+a.card:hover,a.card:focus{border-color:var(--yellow)}
+.card b{display:block;font-size:17px;margin-bottom:2px}
+.card span{color:var(--muted);font-size:14px}
+.n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;border:2px solid var(--blue);color:var(--blue);font-size:12px;font-weight:700;margin-right:8px;vertical-align:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Learning Hub</h1>
+  <p class="sub">Interactive explainers, built to be read on a phone.</p>
+  <div class="track">Machine learning</div>
+  <a class="card" href="explainers/phase0-cnn-explorer.html"><b><span class="n">1</span>Inside my first CNN</b><span>The FashionMNIST model from Phase 0, layer by layer, plus a loader for my trained weights.</span></a>
+</div>
+</body>
+</html>

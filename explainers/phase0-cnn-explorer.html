@@ -1,0 +1,1740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phase 0 CNN Explorer</title>
+<style>
+:root{
+  --bg:#0b0d12; --panel:#141821; --panel2:#1b202b; --line:#2a3140; --text:#e7eaf0; --muted:#98a2b3;
+  --blue:#58c4dd; --red:#fc6255; --yellow:#ffd23f; --green:#83c167; --orange:#ff9f43; --purple:#b48ef0;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow-x:hidden}
+#fatal{position:sticky;top:0;z-index:100;background:#5a0f12;color:#fff;border-bottom:3px solid var(--red);padding:12px 16px;font-weight:600;white-space:pre-wrap}
+header#pipe{position:sticky;top:0;z-index:50;background:rgba(11,13,18,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.pipe-inner{max-width:720px;margin:0 auto;padding:8px 10px 6px}
+.strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;position:relative}
+.strip::before{content:"";position:absolute;left:8%;right:8%;top:15px;height:2px;background:var(--line)}
+.pstep{position:relative;background:none;border:0;color:var(--muted);font:inherit;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:0;cursor:pointer;min-width:0}
+.pstep .pn{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--panel2);border:2px solid var(--line);font-weight:700;color:var(--text);font-size:13px;transition:all .25s}
+.pstep.done .pn{border-color:#2f6e80;color:var(--blue)}
+.pstep.active .pn{border-color:var(--yellow);background:#3a3210;color:var(--yellow);box-shadow:0 0 0 4px rgba(255,210,63,.15)}
+.pstep.active .pl{color:var(--yellow)}
+.pstep.open .pn{background:#24304a}
+.pstep .pl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.here{font-size:12px;color:var(--muted);text-align:center;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.here b{color:var(--text);font-weight:600}
+#pcard{margin-top:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;max-height:60vh;overflow:auto}
+#pcard h4{margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.tgd{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:14px;line-height:1.4}
+.tgd .k{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 80px}
+.hero{padding:26px 0 6px}
+h1{font-size:28px;line-height:1.15;margin:0 0 6px}
+.sub{color:var(--muted);margin:0}
+section.sec{padding:28px 0 10px;border-top:1px solid var(--line);margin-top:20px;scroll-margin-top:84px}
+.kick{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h2{font-size:24px;line-height:1.2;margin:4px 0 12px}
+h3{font-size:17px;margin:24px 0 8px}
+p{margin:0 0 12px}
+.small{font-size:13.5px;line-height:1.45}
+.muted{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0}
+.lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-size:14px;border-radius:10px;padding:7px 12px;cursor:pointer;min-height:38px;touch-action:manipulation}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:#173540;border-color:var(--blue);color:#dff6fc}
+.btn.warm{background:#3a2a12;border-color:var(--orange);color:#ffe2c4}
+.btn:disabled{opacity:.38;cursor:default}
+.btn.on{border-color:var(--yellow);color:var(--yellow);background:#2a250c}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-size:13px;border-radius:999px;padding:6px 11px;cursor:pointer;min-height:34px}
+.chip.sel{border-color:var(--yellow);color:var(--yellow);background:#2a250c}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--panel2);color:var(--muted);font:inherit;font-size:13px;padding:7px 11px;cursor:pointer;min-height:34px}
+.seg button.sel{background:#2a250c;color:var(--yellow)}
+.illus{display:inline-block;font-size:10.5px;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px dashed var(--orange);color:var(--orange);vertical-align:middle;white-space:nowrap;font-weight:600}
+.illus.real{border:1px solid var(--green);color:var(--green)}
+.illus.exact{border:1px solid var(--blue);color:var(--blue)}
+canvas{display:block;max-width:100%;height:auto;touch-action:manipulation;margin:0 auto}
+canvas.draw{touch-action:none;cursor:crosshair}
+.mono{font-family:var(--mono)}
+.def{border-left:3px solid var(--purple);background:rgba(180,142,240,.08);padding:8px 12px;border-radius:0 10px 10px 0;margin:12px 0;font-size:15px;line-height:1.45}
+.def b{color:#d9c6ff}
+.t{border-bottom:1px dotted var(--muted);cursor:help}
+#pop{position:absolute;z-index:80;max-width:300px;background:#232a38;border:1px solid var(--purple);border-radius:10px;padding:9px 11px;font-size:14px;line-height:1.4;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+pre{font-family:var(--mono);font-size:12px;line-height:1.5;background:#0f131a;border:1px solid var(--line);border-radius:10px;padding:10px;overflow-x:auto;margin:8px 0;max-width:100%}
+code{font-family:var(--mono);font-size:.9em;background:#1a1f29;padding:1px 5px;border-radius:5px}
+pre code{background:none;padding:0}
+.c-blue{color:var(--blue)}.c-red{color:var(--red)}.c-yellow{color:var(--yellow)}.c-green{color:var(--green)}.c-orange{color:var(--orange)}.c-purple{color:var(--purple)}
+.keys{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:14px}
+.keys i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.flow{display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-family:var(--mono);font-size:12px}
+.flow .sh{padding:3px 7px;border-radius:7px;background:#16232b;border:1px solid #23495a;color:var(--blue);animation:glow 7s infinite}
+.flow .op{color:var(--muted);font-size:11px}
+@keyframes glow{0%,12%{box-shadow:0 0 0 0 rgba(255,210,63,0);border-color:#23495a}5%{box-shadow:0 0 0 3px rgba(255,210,63,.35);border-color:var(--yellow)}}
+.check{border:1px solid #3d3456;background:linear-gradient(180deg,#1a1726,#141821);border-radius:14px;padding:14px;margin:22px 0 6px}
+.check .qh,.predict .qh{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:6px}
+.predict{border:1px solid #4a4318;background:linear-gradient(180deg,#1f1c0e,#141821);border-radius:14px;padding:14px;margin:14px 0}
+.predict .qh{color:var(--yellow)}
+.q{font-weight:600;margin-bottom:10px}
+.opt{display:block;width:100%;text-align:left;appearance:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-size:15px;border-radius:10px;padding:10px 12px;margin:6px 0;cursor:pointer;line-height:1.35}
+.opt.right{border-color:var(--green);background:rgba(131,193,103,.14)}
+.opt.wrong{border-color:var(--red);background:rgba(252,98,85,.12)}
+.opt:disabled{cursor:default;color:var(--text)}
+.fb{margin-top:8px;padding:10px 12px;border-radius:10px;font-size:14.5px;line-height:1.45}
+.fb.ok{background:rgba(131,193,103,.1);border:1px solid rgba(131,193,103,.4)}
+.fb.no{background:rgba(252,98,85,.08);border:1px solid rgba(252,98,85,.35)}
+details{margin-top:8px}
+summary{cursor:pointer;color:var(--muted);font-size:14px}
+.others{font-size:14px;line-height:1.45;margin:6px 0 0;padding-left:18px}
+.others li{margin:4px 0}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.duo .cap{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+.mm{display:flex;align-items:center;justify-content:center;gap:4px;margin:12px 0 6px}
+.mm .sym{font-size:16px;color:var(--muted);width:12px;text-align:center}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,30px));gap:2px}
+.g3 div{height:26px;display:grid;place-items:center;font-family:var(--mono);font-size:9.5px;border-radius:4px;background:#0f131a;color:var(--text)}
+.g3title{font-size:11px;color:var(--muted);text-align:center;margin-bottom:3px}
+.sumline{font-family:var(--mono);font-size:13px;text-align:center;line-height:1.5}
+.nums{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;max-width:330px;margin:8px auto}
+.nums div{aspect-ratio:1;display:grid;place-items:center;font-family:var(--mono);font-size:11px;border-radius:4px;transition:background .3s}
+.nums div.ctr{outline:2px solid var(--yellow);outline-offset:-2px}
+.batch{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0;position:relative}
+.batch figure{margin:0;text-align:center;font-size:11.5px;color:var(--muted)}
+.batch canvas{width:100%;border-radius:6px;border:1px solid var(--line);image-rendering:pixelated}
+.batch figcaption b{color:var(--green);font-family:var(--mono)}
+.stack{position:relative;padding:6px 6px 0 0}
+.stack::before,.stack::after{content:"";position:absolute;inset:0;border:1px solid var(--line);border-radius:12px;transform:translate(6px,-6px);z-index:-1;background:#10141b}
+.stack::after{transform:translate(12px,-12px);z-index:-2}
+.shape{font-family:var(--mono);font-size:15px}
+.ladder{width:100%;border-collapse:collapse;font-size:13.5px}
+.ladder td,.ladder th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.ladder th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.ladder td.s{font-family:var(--mono);white-space:nowrap}
+.ladder td.p{font-family:var(--mono);text-align:right;white-space:nowrap}
+.ladder .hid{color:#4b5466}
+.bars .br{display:grid;grid-template-columns:62px 1fr 64px;gap:8px;align-items:center;margin:8px 0;font-size:13px}
+.bars .tr{height:18px;background:#0f131a;border-radius:5px;overflow:hidden}
+.bars .fill{height:100%;width:0;background:var(--purple);border-radius:5px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.bars .v{font-family:var(--mono);text-align:right;font-size:12.5px}
+.lrows .lr{display:grid;grid-template-columns:76px 1fr 52px;gap:6px;align-items:center;padding:3px 4px;border-radius:7px;cursor:pointer;font-size:13px;border:1px solid transparent}
+.lrows .lr.sel{border-color:var(--yellow);background:#1f1c0e}
+.lrows .track{position:relative;height:14px;background:#0f131a;border-radius:4px}
+.lrows .zero{position:absolute;top:-2px;bottom:-2px;width:1px;background:#566}
+.lrows .bar{position:absolute;top:2px;height:10px;border-radius:3px;transition:all .35s}
+.lrows .val{font-family:var(--mono);text-align:right;font-size:12px}
+.lrows .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lossbig{font-family:var(--mono);font-size:15px;line-height:1.6;text-align:center;margin:8px 0}
+.lossbig .L{font-size:30px;font-weight:700;color:var(--orange)}
+.pills{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:8px 0}
+.pill{padding:5px 9px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;color:var(--muted);transition:all .15s;font-family:var(--mono)}
+.pill.on{border-color:var(--yellow);color:var(--yellow);background:#2a250c}
+.pill.onb{border-color:var(--orange);color:var(--orange);background:#2d1f0e}
+.code .ln{display:block;padding:0 4px;border-radius:4px;transition:background .15s}
+.code .ln.on{background:#3a3210;color:var(--yellow)}
+.code .cmt{color:#6c7891}
+.ctrs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;margin:8px 0}
+.ctrs div{background:#0f131a;border-radius:10px;padding:6px 2px}
+.ctrs b{display:block;font-family:var(--mono);font-size:18px}
+.ctrs span{font-size:11px;color:var(--muted)}
+.prog{height:8px;background:#0f131a;border-radius:4px;overflow:hidden;margin:4px 0 10px}
+.prog i{display:block;height:100%;width:0;background:var(--blue)}
+.cm{display:grid;grid-template-columns:62px repeat(3,minmax(0,1fr)) 46px;gap:4px;align-items:center;font-size:12px}
+.cm .hd{color:var(--muted);text-align:center;font-size:11px;line-height:1.2}
+.cm .rh{color:var(--muted);font-size:11.5px;line-height:1.2}
+.cm input{width:100%;min-width:0;font:inherit;font-family:var(--mono);font-size:15px;text-align:center;color:var(--text);background:#0f131a;border:1px solid var(--line);border-radius:8px;padding:8px 0}
+.cm input.diag{border-color:rgba(131,193,103,.6);background:rgba(131,193,103,.08)}
+.cm input:focus{outline:2px solid var(--yellow)}
+.cm .sum{font-family:var(--mono);color:var(--muted);text-align:center}
+.pr{display:grid;grid-template-columns:64px 1fr 1fr;gap:6px 8px;font-size:13px;align-items:center;margin-top:12px}
+.pr .h{font-size:11px;color:var(--muted);text-transform:uppercase}
+.mb{position:relative;height:20px;background:#0f131a;border-radius:5px;overflow:hidden}
+.mb i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;transition:width .35s}
+.mb span{position:relative;font-family:var(--mono);font-size:11.5px;padding-left:6px;line-height:20px}
+.explain{margin-top:12px;padding:10px 12px;border-radius:10px;background:#0f131a;border:1px solid var(--line);font-size:14px;line-height:1.45;min-height:48px}
+.acc{font-family:var(--mono);font-size:44px;font-weight:700;color:var(--muted);line-height:1}
+input[type=range]{width:100%;accent-color:var(--yellow)}
+.sl{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:14px}
+.sl output{font-family:var(--mono);min-width:48px;text-align:right}
+.wtab{display:grid;grid-template-columns:auto 1fr 1fr;gap:4px 10px;font-family:var(--mono);font-size:13px;margin:8px 0}
+.wtab .h{font-family:inherit;color:var(--muted);font-size:11px;text-transform:uppercase}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.ab div{border-radius:12px;padding:10px;font-size:13.5px;line-height:1.4}
+.ab .a{border:1px solid var(--orange);background:rgba(255,159,67,.07)}
+.ab .b{border:1px solid var(--blue);background:rgba(88,196,221,.07)}
+.ab b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.msg{font-size:14px;text-align:center;min-height:21px;margin:6px 0}
+footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
+@media (min-width:600px){ .strip::before{top:15px} h1{font-size:34px} }
+</style>
+</head>
+<body>
+<div id="fatal" hidden></div>
+<header id="pipe">
+  <div class="pipe-inner">
+    <nav class="strip" id="strip" aria-label="Pipeline map"></nav>
+    <div class="here" id="here"></div>
+    <div id="pcard" hidden></div>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="hero">
+  <h1>Inside my first CNN</h1>
+  <p class="sub">FashionMNIST · PyTorch · 10,330 parameters · Phase 0</p>
+</div>
+
+<!-- ============ §1 ============ -->
+<section class="sec" id="s1" data-step="-1" data-n="1" data-title="The map">
+  <div class="kick">§1 · The big picture</div>
+  <h2>Six steps, one small model</h2>
+  <p>Every PyTorch training script follows the same six steps. The bar pinned to the top of the screen is your map. <b>Tap any step</b> to see what it <span class="c-blue">takes in</span>, what it <span class="c-yellow">does</span>, and what it <span class="c-green">gives</span> to the next step. As you scroll, the step you're reading about lights up.</p>
+  <div class="card">
+    <div class="lbl">Your model, start to finish</div>
+    <div class="flow" id="flow"></div>
+    <p class="small muted" style="margin:10px 0 0">Each box is the <span class="t" data-d="A tensor is PyTorch's word for a block of numbers with a shape, like a 28×28 grid (2 dimensions) or a stack of 16 grids (3 dimensions).">tensor</span> shape after a layer, for one image: (channels, height, width). Sections 3–6 open up each arrow.</p>
+  </div>
+  <div class="card">
+    <div class="lbl">Colour key (used everywhere)</div>
+    <ul class="keys">
+      <li><i style="background:var(--blue)"></i>positive numbers</li>
+      <li><i style="background:var(--red)"></i>negative numbers</li>
+      <li><i style="background:var(--yellow)"></i>look here now</li>
+      <li><i style="background:var(--purple)"></i>learned weights</li>
+      <li><i style="background:var(--orange)"></i>loss &amp; gradients</li>
+      <li><i style="background:var(--green)"></i>correct / true label</li>
+    </ul>
+    <p class="small" style="margin:12px 0 0"><span class="illus">illustrative</span> means "made up to show the idea, not from your trained model". Shapes, parameter counts and formulas are exact.</p>
+  </div>
+  <div class="card" id="wcard">
+    <div class="lbl">Your trained weights <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></div>
+    <p class="small">Out of the box, sections 3, 4 and 6 use hand-made <span class="illus">illustrative</span> weights. Load a JSON export of your real model and they switch to your actual filters and predictions.</p>
+    <div class="row">
+      <button class="btn primary" data-loadw>Load my weights (.json)</button>
+      <span class="srcseg" hidden></span>
+    </div>
+    <input type="file" id="wfile" accept=".json,application/json" hidden>
+    <div id="wstatus" class="small muted">Using illustrative weights.</div>
+    <details>
+      <summary>Colab code to export your weights</summary>
+      <p class="small" style="margin-top:8px">Run this in the notebook after training. It saves every tensor in your model's <code>state_dict</code> (its dictionary of weights) in order, plus the normalization you used.</p>
+      <pre id="colab"></pre>
+      <button class="btn" id="copycolab">Copy code</button>
+    </details>
+  </div>
+  <div class="check" id="q1"></div>
+</section>
+
+<!-- ============ §2 ============ -->
+<section class="sec" id="s2" data-step="0" data-n="2" data-title="Data">
+  <div class="kick">§2 · Step 1 · Load data</div>
+  <h2>An image is just a grid of numbers</h2>
+  <p><b>FashionMNIST</b> is 70,000 small grayscale photos of clothing, each 28 × 28 pixels and each tagged with one of 10 classes (T-shirt, Trouser, … Ankle boot).</p>
+  <div class="def"><b>Pixel</b>: one square of the image, stored as one brightness number. <b>Label</b>: the right answer for an image, stored as a number 0–9 (0 = T-shirt/top, 9 = Ankle boot).</div>
+  <div class="card">
+    <div class="lbl">Paint an image (white on black, like FashionMNIST)</div>
+    <canvas id="paint" class="draw" aria-label="28 by 28 drawing grid"></canvas>
+    <div class="row" style="justify-content:center">
+      <div class="seg" id="toolseg"><button data-tool="pen" class="sel">Pen</button><button data-tool="eraser">Eraser</button></div>
+      <button class="btn" id="clear">Clear</button>
+    </div>
+    <div class="lbl" style="margin-top:6px">Or start from a shape <span class="illus">drawn by hand, not real data</span></div>
+    <div class="chips" id="presets"></div>
+    <p class="small muted" style="margin:4px 0 0">Your image feeds every later section, so change it any time.</p>
+  </div>
+
+  <h3>Zoom in: the numbers</h3>
+  <p>Tap the little image to move the yellow window. Then step the numbers through the two changes your data loader makes.</p>
+  <div class="card">
+    <canvas id="thumb" class="draw" style="max-width:112px"></canvas>
+    <div class="row" style="justify-content:center">
+      <div class="seg" id="stageseg"><button data-st="0" class="sel">0–255 raw</button><button data-st="1">÷ 255</button><button data-st="2">normalize</button></div>
+    </div>
+    <div class="nums" id="nums"></div>
+    <p class="small mono" id="formula" style="text-align:center;margin:8px 0 0"></p>
+  </div>
+  <div class="def"><b>ToTensor (÷ 255)</b>: squashes 0–255 into 0–1. <b>Normalize</b>: subtracts the dataset's average brightness (mean) and divides by its spread (std), so values are centred near 0. Background pixels become negative (<span class="c-red">red</span>), garment pixels positive (<span class="c-blue">blue</span>). Centred numbers make training steadier.</div>
+  <p class="small muted" id="normnote"></p>
+
+  <h3>What's a batch?</h3>
+  <div class="def"><b>Batch</b>: a handful of images processed together. The model learns from 64 at a time instead of one by one, which is faster and gives a steadier signal.</div>
+  <div class="card">
+    <div class="lbl">One batch from <code>train_loader</code> <span class="illus">8 of 64 shown · hand-drawn shapes</span></div>
+    <div class="stack"><div class="batch" id="batch"></div></div>
+    <p class="shape" style="margin:14px 0 4px">images.shape = (<span class="c-yellow">64</span>, <span class="c-purple">1</span>, <span class="c-blue">28</span>, <span class="c-blue">28</span>)</p>
+    <p class="small" style="margin:0 0 10px"><span class="c-yellow">64</span> images · <span class="c-purple">1</span> channel (grayscale, so one brightness number per pixel) · <span class="c-blue">28 × 28</span> pixels</p>
+    <p class="shape" style="margin:0 0 4px">labels.shape = (<span class="c-yellow">64</span>,)</p>
+    <p class="small mono" id="labelsT" style="margin:0 0 10px;word-break:break-all"></p>
+    <button class="btn" id="newbatch">Shuffle a new batch</button>
+  </div>
+  <div class="check" id="q2"></div>
+</section>
+
+<!-- ============ §3 ============ -->
+<section class="sec" id="s3" data-step="1" data-n="3" data-title="Convolution">
+  <div class="kick">§3 · Step 2 · Define model · conv1</div>
+  <h2>A filter slides over the image</h2>
+  <p>A <b>filter</b> is a tiny 3 × 3 grid of <span class="c-purple">weights</span>. Lay it on the image, multiply each of the 9 pixels under it by the weight on top, and add the 9 results (plus one extra number, the <b>bias</b>). That sum becomes one pixel of the output. Slide one pixel right and repeat, 28 × 28 = 784 times.</p>
+  <div class="def"><b>Weight</b>: a number the model learns during training. <b>Feature map</b>: the output grid, which is bright wherever the image matches the filter's pattern. <b>Padding</b>: a border of zeros around the image so the filter can sit on edge pixels too.</div>
+  <div class="card">
+    <div class="lbl" id="s3lbl">Filter <span class="illus" id="s3badge">illustrative · hand-made</span> <span class="srcseg" hidden></span></div>
+    <div class="chips" id="fchips"></div>
+    <p class="small" id="fdesc"></p>
+    <div class="duo">
+      <div><canvas id="cin"></canvas><div class="cap">input + zero padding (30×30)</div></div>
+      <div><canvas id="cout"></canvas><div class="cap">feature map (28×28)</div></div>
+    </div>
+    <div class="mm">
+      <div><div class="g3title">pixels</div><div class="g3" id="gp"></div></div>
+      <div class="sym">×</div>
+      <div><div class="g3title c-purple">weights</div><div class="g3" id="gw"></div></div>
+      <div class="sym">=</div>
+      <div><div class="g3title">products</div><div class="g3" id="gx"></div></div>
+    </div>
+    <div class="sumline" id="csum"></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" id="cplay">▶ Play</button>
+      <button class="btn" id="cstep">Step →</button>
+      <button class="btn" id="cfinish">Finish</button>
+      <button class="btn" id="creset">Reset</button>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:0">
+      <span class="small muted">speed</span>
+      <div class="seg" id="cspeed"><button data-sp="0">slow</button><button data-sp="1" class="sel">med</button><button data-sp="2">fast</button></div>
+    </div>
+    <p class="small muted" style="margin:0">Tap either grid to jump the filter to that spot.</p>
+  </div>
+  <div class="card">
+    <div class="lbl">conv1 has 16 filters → 16 feature maps, shape (16, 28, 28) <span class="illus" id="s3badge2">illustrative</span></div>
+    <canvas id="maps16"></canvas>
+    <p class="small muted" style="margin:8px 0 0">Tap a map to animate its filter above. In your real model, training chooses these 16 filters' weights (16 × 9 = 144) on its own; nobody hand-designs them.</p>
+  </div>
+  <div class="check" id="q3"></div>
+</section>
+
+<!-- ============ §4 ============ -->
+<section class="sec" id="s4" data-step="1" data-n="4" data-title="ReLU & pooling">
+  <div class="kick">§4 · Step 2 · Define model · ReLU, MaxPool</div>
+  <h2>Keep the positives, then shrink</h2>
+  <div class="def"><b>ReLU</b> ("rectified linear unit"): replace every negative number with 0 and leave positives alone. In symbols, ReLU(x) = max(0, x). It's the simple bend that lets stacked layers learn more than straight-line patterns.</div>
+  <div class="card">
+    <div class="lbl">Feature map from §3 <span class="illus" id="s4badge">illustrative</span></div>
+    <canvas id="rcv"></canvas>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="rtog">Apply ReLU</button></div>
+    <p class="msg" id="rmsg"></p>
+    <p class="small mono" id="rrow" style="text-align:center"></p>
+  </div>
+  <div class="def"><b>Max pooling (2×2)</b>: chop the map into 2 × 2 squares and keep only the biggest number from each. Width and height halve, the strongest signals survive, and later layers get less to process.</div>
+  <div class="card">
+    <div class="lbl">28 → 14 → 7, drawn to the same scale</div>
+    <canvas id="pcv"></canvas>
+    <p class="sumline" id="pmsg" style="min-height:22px"></p>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" id="pool1">▶ Pool 28→14</button>
+      <button class="btn primary" id="pool2" disabled>▶ Pool 14→7</button>
+      <button class="btn" id="preset">Reset</button>
+    </div>
+    <p class="small muted" style="margin:0">In your real model, conv2 + ReLU happen between the two pools (shape stays 16×14×14). We skip them here so you can watch the shrinking.</p>
+  </div>
+  <div class="check" id="q4"></div>
+</section>
+
+<!-- ============ §5 ============ -->
+<section class="sec" id="s5" data-step="1" data-n="5" data-title="Shapes & parameters">
+  <div class="kick">§5 · Step 2 · Define model · shapes</div>
+  <h2>Predict the shapes</h2>
+  <p>Before each reveal, make a guess. Shapes are written (channels, height, width) for one image; with a batch, PyTorch puts the batch size in front, e.g. (64, 16, 28, 28).</p>
+  <div class="def"><b>Parameter</b>: any number the model learns, meaning every weight and every bias. Your model has 10,330 of them.</div>
+  <div class="card">
+    <table class="ladder" id="ladder"></table>
+    <p class="small" id="verified" style="margin:10px 0 0"></p>
+  </div>
+  <div id="shapeQs"></div>
+  <div class="predict" id="pcount">
+    <div class="qh">Predict</div>
+    <div class="q">How many parameters does conv1 have? (16 filters, each 3×3, one input channel, one bias per filter)</div>
+    <div class="row"><input id="pcin" type="number" inputmode="numeric" placeholder="your guess" style="font:inherit;font-family:var(--mono);width:130px;padding:8px;border-radius:10px;border:1px solid var(--line);background:#0f131a;color:var(--text)"><button class="btn primary" id="pcbtn">Reveal</button></div>
+    <div id="pcfb"></div>
+  </div>
+  <div id="mostQ"></div>
+  <div class="card" id="pbars">
+    <div class="lbl">Where the 10,330 parameters live <span class="illus exact">exact</span></div>
+    <div class="bars" id="bars"></div>
+    <p class="small" id="pbnote"></p>
+  </div>
+  <h3>Why is the linear layer so big?</h3>
+  <div class="card">
+    <canvas id="sharecv"></canvas>
+    <p class="small" style="margin:10px 0 0"><b class="c-purple">Weight sharing:</b> a conv filter's 9 weights are reused at every one of the 784 positions, so conv1 needs only 16 × (9 + 1) = 160 numbers. The linear layer has no sharing: each of its 784 inputs connects to each of its 10 outputs with a weight of its own, so 784 × 10 + 10 = 7,850.</p>
+    <p class="small muted" id="nocnn" style="margin:0"></p>
+  </div>
+  <div class="check" id="q5"></div>
+</section>
+
+<!-- ============ §6 ============ -->
+<section class="sec" id="s6" data-step="1" data-n="6" data-title="Flatten & linear">
+  <div class="kick">§6 · Step 2 · Define model · flatten, linear</div>
+  <h2>From 16 maps to 10 scores</h2>
+  <p><b>Flatten</b> computes nothing. It takes the 16 little 7 × 7 maps that come out of block 2 and lays their numbers end to end in one row: 16 × 7 × 7 = 784.</p>
+  <div class="card">
+    <div class="lbl">Flatten your image's (16, 7, 7) <span class="illus" id="s6badge">illustrative weights</span> <span class="srcseg" hidden></span></div>
+    <canvas id="flcv"></canvas>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="unroll">▶ Unroll</button></div>
+    <p class="small muted" style="margin:0">Position in the row = channel × 49 + row × 7 + column (PyTorch's order).</p>
+  </div>
+  <div class="def"><b>Linear layer</b>: for each class, multiply all 784 numbers by 784 <span class="c-purple">weights</span>, add them up, add a bias. The result is that class's <b>logit</b>, a raw score that can be any number. Higher means "more like this class".</div>
+  <div class="card">
+    <div class="lbl">One class score, built from 784 products</div>
+    <p class="small" style="margin:0 0 6px">Tap a class in the bars below to pick it.</p>
+    <canvas id="wscv"></canvas>
+    <p class="sumline" id="wseq" style="font-size:12px"></p>
+    <p class="sumline" id="wsum"></p>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="addup">▶ Add them up</button></div>
+  </div>
+  <div class="card">
+    <div class="lbl">10 logits for your image <span class="illus" id="s6badge2">illustrative</span></div>
+    <div class="lrows" id="logits"></div>
+    <p class="small" id="pred" style="margin:10px 0 0"></p>
+  </div>
+  <div class="check" id="q6"></div>
+</section>
+
+<!-- ============ §7 ============ -->
+<section class="sec" id="s7" data-step="2" data-n="7" data-title="Loss">
+  <div class="kick">§7 · Step 3 · Loss</div>
+  <h2>How wrong was that?</h2>
+  <p>The loss turns 10 logits plus the true label into one number that says how wrong the model was. It happens in two moves:</p>
+  <div class="def"><b>Softmax</b>: turns logits into <b>probabilities</b> (positive, summing to 1). Each logit is exponentiated (e<sup>logit</sup>), then divided by the total.<br><b>Cross-entropy loss</b>: −ln(probability given to the <span class="c-green">true class</span>). If the model gave the right answer probability 1, the loss is 0. As that probability heads to 0, the loss shoots up.</div>
+  <div class="predict" id="uniQ"></div>
+  <div class="card">
+    <div class="lbl">Drag any logit bar up or down</div>
+    <canvas id="lgcv" class="draw"></canvas>
+    <div class="lbl" style="margin-top:10px">softmax → probabilities</div>
+    <canvas id="prcv"></canvas>
+    <div class="lbl" style="margin-top:12px">True label <span class="c-green">(green)</span></div>
+    <div class="chips" id="tchips"></div>
+    <div class="lossbig" id="lossout"></div>
+    <canvas id="lncv"></canvas>
+    <div class="row" style="justify-content:center">
+      <button class="btn" id="lzero">All zeros</button>
+      <button class="btn" id="l6">Use §6 logits</button>
+      <button class="btn" id="lright">Confident &amp; right</button>
+      <button class="btn" id="lwrong">Confident &amp; wrong</button>
+    </div>
+  </div>
+  <p>Notice that the loss only <b>measures</b>. It doesn't tell any weight what to do. That job belongs to the next step.</p>
+  <div class="check" id="q7"></div>
+</section>
+
+<!-- ============ §8 ============ -->
+<section class="sec" id="s8" data-step="3" data-n="8" data-title="Backprop vs optimizer">
+  <div class="kick">§8 · Step 4 · Optimizer (and backprop)</div>
+  <h2>Two different jobs</h2>
+  <div class="ab">
+    <div class="a"><b class="c-orange">① Backprop</b><code>loss.backward()</code><br>For <i>every</i> weight, works out its <span class="t" data-d="A gradient is the slope of the loss with respect to one weight: if you nudged this weight up a tiny bit, how much would the loss go up (+) or down (−)?">gradient</span>: "how much did you contribute to the loss?" <b style="display:inline;text-transform:none;letter-spacing:0">Changes no weights.</b></div>
+    <div class="b"><b class="c-blue">② Optimizer</b><code>optimizer.step()</code><br>Reads those gradients and nudges each weight a little <i>against</i> its gradient (downhill). <b style="display:inline;text-transform:none;letter-spacing:0">Computes no gradients.</b></div>
+  </div>
+  <div class="def"><b>Gradient</b>: a weight's slope. +2.4 means "raising this weight raises the loss quickly, so lower it". <b>Learning rate (lr)</b>: how big a step the optimizer takes. The update rule (plain SGD) is <span class="mono">w ← w − lr × gradient</span>.</div>
+  <div class="card">
+    <div class="lbl">Your model's 10,330 weights, one dot each</div>
+    <canvas id="gridcv"></canvas>
+    <p class="small muted" id="gridmsg" style="margin:8px 0 0">Press ① below: backward() gives every dot a gradient. <span class="illus">gradient sizes illustrative</span></p>
+  </div>
+  <div class="card">
+    <div class="lbl">A toy loss surface with just 2 weights <span class="illus">illustrative</span></div>
+    <p class="small" style="margin:0 0 8px">Your model's loss depends on 10,330 weights, which can't be drawn. Here it depends on two, w₁ (across) and w₂ (up). Darker means lower loss. The <span class="c-yellow">ball</span> is the current weights. Tap the map to move it.</p>
+    <canvas id="surf" class="draw"></canvas>
+    <div class="row" style="justify-content:center">
+      <button class="btn warm" id="bwd">① loss.backward()</button>
+      <button class="btn primary" id="stp" disabled>② optimizer.step()</button>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:0">
+      <button class="btn" id="auto">▶ Auto ×40</button>
+      <button class="btn" id="sreset">Reset ball</button>
+    </div>
+    <div class="wtab" id="wtab"></div>
+    <p class="msg" id="smsg"></p>
+    <div class="sl"><span>lr</span><input type="range" id="lr" min="0" max="1000" value="600"><output id="lrout"></output></div>
+    <div class="chips" style="justify-content:center">
+      <button class="chip" data-lr="0.02">too small</button><button class="chip" data-lr="0.3">good</button><button class="chip" data-lr="0.6">too big</button><button class="chip" data-lr="0.72">way too big</button>
+    </div>
+    <canvas id="slcv"></canvas>
+  </div>
+  <p>In real training, PyTorch also calls <code>optimizer.zero_grad()</code> each round. Gradients <i>add up</i> by default, so old ones must be wiped before the next backward().</p>
+  <div class="check" id="q8"></div>
+</section>
+
+<!-- ============ §9 ============ -->
+<section class="sec" id="s9" data-step="4" data-n="9" data-title="Training loop">
+  <div class="kick">§9 · Step 5 · Training loop</div>
+  <h2>Loops inside loops</h2>
+  <div class="def"><b>Epoch</b>: one full pass over all 60,000 training images. <b>Step</b> (or iteration): one batch going through forward → loss → backward → update. 60,000 ÷ 64 = 937.5, so each epoch has <b>938 steps</b> (937 full batches plus a last one of 32).</div>
+  <div class="card">
+    <pre class="code" id="loopcode"></pre>
+    <div class="ctrs">
+      <div><b id="cep">1/5</b><span>epoch</span></div>
+      <div><b id="cbt">0/938</b><span>batch</span></div>
+      <div><b id="cim">0</b><span>images seen</span></div>
+    </div>
+    <div class="small muted">epoch progress</div><div class="prog"><i id="pgE"></i></div>
+    <div class="small muted">batch progress (this epoch)</div><div class="prog"><i id="pgB" style="background:var(--yellow)"></i></div>
+    <div class="pills" id="flowpills"></div>
+    <p class="msg small" id="lmsg"></p>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" id="lslow">▶ One step, slowly</button>
+      <button class="btn" id="lfast">▶▶ Fast</button>
+      <button class="btn" id="lend">Finish all</button>
+      <button class="btn" id="lreset">Reset</button>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:0">
+      <span class="small muted">epochs</span><button class="btn" id="eminus">−</button><b class="mono" id="eval">5</b><button class="btn" id="eplus">+</button>
+      <span class="small muted">(set to what you used)</span>
+    </div>
+    <div class="lbl" style="margin-top:10px">Loss per step <span class="illus">simulated, not your real run</span></div>
+    <canvas id="lccv"></canvas>
+    <p class="small muted" style="margin:6px 0 0">It starts near ln 10 ≈ 2.30 (random guessing, §7) and falls. The thin line jumps around because every batch is a different random 64 images. The thick line is a running average.</p>
+  </div>
+  <div class="check" id="q9"></div>
+</section>
+
+<!-- ============ §10 ============ -->
+<section class="sec" id="s10" data-step="5" data-n="10" data-title="Evaluate">
+  <div class="kick">§10 · Step 6 · Evaluate</div>
+  <h2>Exam on unseen questions</h2>
+  <p>The <b>test set</b> is 10,000 FashionMNIST images that never appear in training. The model never got a gradient from them, so its score on them shows how well it <b>generalizes</b>, i.e. how it does on new clothes.</p>
+  <div class="def"><b>Overfitting</b>: the model memorizes quirks of its training images instead of learning general patterns. Training accuracy keeps rising while accuracy on new images stalls or drops. Testing on training data would hide this, like grading a student with the exact homework questions they already saw.</div>
+  <div class="card">
+    <div class="lbl">Train vs test accuracy over epochs <span class="illus">illustrative</span></div>
+    <canvas id="ovcv"></canvas>
+  </div>
+  <div class="card">
+    <div class="lbl">Your real test accuracy</div>
+    <div class="acc">—</div>
+    <p class="small" style="margin:8px 0 0">Not recorded yet. Run your evaluate cell and note the number. This page won't invent one.</p>
+    <pre>model.eval()               # eval mode
+correct = 0
+with torch.no_grad():      # no gradients
+  for x, y in test_loader:
+    pred = model(x).argmax(1)
+    correct += (pred == y).sum().item()
+print(correct / 10000)</pre>
+  </div>
+  <h3>Confusion matrix</h3>
+  <div class="def"><b>Confusion matrix</b>: rows are the true class and columns the predicted class. The diagonal (<span class="c-green">green</span>) counts correct answers. <b>Precision</b> for a class: of everything the model <i>called</i> that class, the fraction that really was. <b>Recall</b>: of everything that really <i>was</i> that class, the fraction the model caught.</div>
+  <div class="card">
+    <div class="lbl">3 tricky classes · edit any cell <span class="illus">illustrative numbers</span></div>
+    <div class="cm" id="cm"></div>
+    <div class="pr" id="prr"></div>
+    <div class="explain" id="cmx">Tap a cell to see which score its mistakes hurt.</div>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" id="moreshirt">Model says "Shirt" more</button>
+      <button class="btn" id="cmreset">Reset</button>
+    </div>
+  </div>
+  <div class="check" id="q10"></div>
+</section>
+
+<footer>Built for Phase 0 · everything runs in this file, offline.</footer>
+</main>
+<div id="pop" hidden></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Utilities
+   ===================================================================== */
+const DPR = 2;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+const fmtInt = n => Math.round(n).toLocaleString('en-US');
+function fmt(v, d = 2) { let s = v.toFixed(d); if (/^-0\.?0*$/.test(s)) s = s.slice(1); return s; }
+function sfmt(v) {
+  if (Math.abs(v) < 0.005) return '0';
+  if (Math.abs(v - Math.round(v)) < 0.005 && Math.abs(v) < 100) return String(Math.round(v));
+  return v.toFixed(2).replace(/^(-?)0\./, '$1.');
+}
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === 'class') e.className = v; else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) if (c != null) e.append(c.nodeType ? c : document.createTextNode(c));
+  return e;
+}
+function setupCanvas(cv, w, hh) {
+  cv.width = w * DPR; cv.height = hh * DPR; cv.style.width = '100%'; cv.style.maxWidth = w + 'px';
+  cv._w = w; cv._h = hh; const c = cv.getContext('2d'); c.setTransform(DPR, 0, 0, DPR, 0, 0); return c;
+}
+function evPos(cv, e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv._w / r.width, (e.clientY - r.top) * cv._h / r.height]; }
+function tween(dur, step, done) {
+  let start = null, id, dead = false;
+  function f(ts) { if (dead) return; if (start === null) start = ts; const t = Math.min(1, (ts - start) / dur); step(t); if (t < 1) id = requestAnimationFrame(f); else if (done) done(); }
+  id = requestAnimationFrame(f); return () => { dead = true; cancelAnimationFrame(id); };
+}
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const COL = { bg: [17, 21, 28], blue: [88, 196, 221], red: [252, 98, 85], yellow: [255, 210, 63], green: [131, 193, 103], orange: [255, 159, 67], purple: [180, 142, 240] };
+function mix(a, b, t) { return `rgb(${a[0] + (b[0] - a[0]) * t | 0},${a[1] + (b[1] - a[1]) * t | 0},${a[2] + (b[2] - a[2]) * t | 0})`; }
+function divCol(v, m) { const t = clamp(Math.abs(v) / (m || 1), 0, 1); return mix(COL.bg, v >= 0 ? COL.blue : COL.red, Math.pow(t, .7)); }
+function grayCol(v) { const g = clamp(v, 0, 1) * 255 | 0; return `rgb(${g},${g},${g})`; }
+function maxAbs(a) { let m = 0; for (const v of a) { const x = Math.abs(v); if (x > m) m = x; } return m || 1; }
+function showFatal(msg) {
+  const f = $('#fatal'); f.hidden = false; f.textContent = (f.textContent ? f.textContent + '\n' : '') + '⚠ ' + msg;
+  console.error(msg);
+}
+window.addEventListener('error', e => showFatal('Script error: ' + e.message));
+
+const CLASSES = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot'];
+const SHORT = ['Tee', 'Trou', 'Pull', 'Dress', 'Coat', 'Sand', 'Shirt', 'Snkr', 'Bag', 'Boot'];
+
+/* =====================================================================
+   The exact model spec (must not change) + verification
+   ===================================================================== */
+const EXPECTED = {
+  shapes: { input: [1, 28, 28], conv1: [16, 28, 28], pool1: [16, 14, 14], conv2: [16, 14, 14], pool2: [16, 7, 7], flat: [784], logits: [10] },
+  params: { conv1: 160, conv2: 2320, linear: 7850, total: 10330 }
+};
+
+/* ---- forward pass engine (PyTorch semantics: cross-correlation, NCHW, row-major flatten) ---- */
+function conv2d(inp, s, w, b, Cout, k = 3, pad = 1) {
+  const [Cin, H, W] = s; const Ho = H + 2 * pad - k + 1, Wo = W + 2 * pad - k + 1;
+  if (w.length !== Cout * Cin * k * k || b.length !== Cout) throw new Error(`conv2d weight size mismatch: got ${w.length}/${b.length}, need ${Cout * Cin * k * k}/${Cout}`);
+  const out = new Float32Array(Cout * Ho * Wo);
+  for (let o = 0; o < Cout; o++) for (let y = 0; y < Ho; y++) for (let x = 0; x < Wo; x++) {
+    let sum = b[o];
+    for (let i = 0; i < Cin; i++) {
+      const ib = i * H * W, wb = (o * Cin + i) * k * k;
+      for (let ky = 0; ky < k; ky++) {
+        const yy = y + ky - pad; if (yy < 0 || yy >= H) continue;
+        for (let kx = 0; kx < k; kx++) { const xx = x + kx - pad; if (xx < 0 || xx >= W) continue; sum += inp[ib + yy * W + xx] * w[wb + ky * k + kx]; }
+      }
+    }
+    out[(o * Ho + y) * Wo + x] = sum;
+  }
+  return { d: out, s: [Cout, Ho, Wo] };
+}
+function relu(t) { const o = new Float32Array(t.d.length); for (let i = 0; i < o.length; i++) o[i] = t.d[i] > 0 ? t.d[i] : 0; return { d: o, s: t.s.slice() }; }
+function maxpool2(t) {
+  const [C, H, W] = t.s, H2 = Math.floor(H / 2), W2 = Math.floor(W / 2), o = new Float32Array(C * H2 * W2);
+  for (let c = 0; c < C; c++) for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+    const b = c * H * W; let m = -Infinity;
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) { const v = t.d[b + (2 * y + dy) * W + 2 * x + dx]; if (v > m) m = v; }
+    o[(c * H2 + y) * W2 + x] = m;
+  }
+  return { d: o, s: [C, H2, W2] };
+}
+function flatten(t) { return { d: t.d, s: [t.d.length] }; }
+function linear(t, w, b, out) {
+  const n = t.d.length; if (w.length !== out * n || b.length !== out) throw new Error(`linear weight size mismatch: ${w.length} vs ${out}×${n}`);
+  const o = new Float32Array(out);
+  for (let j = 0; j < out; j++) { let s = b[j]; for (let i = 0; i < n; i++) s += w[j * n + i] * t.d[i]; o[j] = s; }
+  return { d: o, s: [out] };
+}
+function forward(img, W) {
+  const x = { d: new Float32Array(784), s: [1, 28, 28] };
+  for (let i = 0; i < 784; i++) x.d[i] = (img[i] - W.mean) / W.std;
+  const c1 = conv2d(x.d, x.s, W.c1w, W.c1b, 16), r1 = relu(c1), p1 = maxpool2(r1);
+  const c2 = conv2d(p1.d, p1.s, W.c2w, W.c2b, 16), r2 = relu(c2), p2 = maxpool2(r2);
+  const fl = flatten(p2), lg = linear(fl, W.fw, W.fb, 10);
+  return { x, c1, r1, p1, c2, r2, p2, flat: fl, logits: lg };
+}
+function paramCounts(W) {
+  const conv1 = W.c1w.length + W.c1b.length, conv2 = W.c2w.length + W.c2b.length, lin = W.fw.length + W.fb.length;
+  return { conv1, conv2, linear: lin, total: conv1 + conv2 + lin };
+}
+const eqShape = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+/* Verifies shapes 3 ways: formulas, an actual forward pass, and param array sizes. Returns list of errors. */
+function verifyModel(W) {
+  const errs = [];
+  // 1) shape formulas from the layer definitions
+  const convOut = (s, cout, k, p) => [cout, s[1] + 2 * p - k + 1, s[2] + 2 * p - k + 1];
+  const poolOut = s => [s[0], Math.floor(s[1] / 2), Math.floor(s[2] / 2)];
+  const f = {}; f.input = [1, 28, 28]; f.conv1 = convOut(f.input, 16, 3, 1); f.pool1 = poolOut(f.conv1);
+  f.conv2 = convOut(f.pool1, 16, 3, 1); f.pool2 = poolOut(f.conv2); f.flat = [f.pool2[0] * f.pool2[1] * f.pool2[2]]; f.logits = [10];
+  for (const k in EXPECTED.shapes) if (!eqShape(f[k], EXPECTED.shapes[k])) errs.push(`formula shape ${k}: got (${f[k]}) expected (${EXPECTED.shapes[k]})`);
+  const pf = { conv1: 16 * (1 * 3 * 3) + 16, conv2: 16 * (16 * 3 * 3) + 16, linear: f.flat[0] * 10 + 10 };
+  pf.total = pf.conv1 + pf.conv2 + pf.linear;
+  for (const k in EXPECTED.params) if (pf[k] !== EXPECTED.params[k]) errs.push(`formula params ${k}: got ${pf[k]} expected ${EXPECTED.params[k]}`);
+  // 2) actual forward pass
+  let r;
+  try { r = forward(new Float32Array(784).fill(.5), W); } catch (e) { errs.push('forward pass failed: ' + e.message); return { errs, actual: null }; }
+  const actual = { input: r.x.s, conv1: r.c1.s, pool1: r.p1.s, conv2: r.c2.s, pool2: r.p2.s, flat: r.flat.s, logits: r.logits.s };
+  for (const k in EXPECTED.shapes) {
+    if (!eqShape(actual[k], EXPECTED.shapes[k])) errs.push(`forward-pass shape ${k}: got (${actual[k]}) expected (${EXPECTED.shapes[k]})`);
+    const t = k === 'input' ? r.x : k === 'flat' ? r.flat : k === 'logits' ? r.logits : r[{ conv1: 'c1', pool1: 'p1', conv2: 'c2', pool2: 'p2' }[k]];
+    if (t.d.length !== EXPECTED.shapes[k].reduce((a, b) => a * b, 1)) errs.push(`tensor ${k} holds ${t.d.length} numbers, shape says otherwise`);
+  }
+  for (const v of r.logits.d) if (!Number.isFinite(v)) { errs.push('forward pass produced a non-finite logit'); break; }
+  // 3) parameter arrays
+  const pc = paramCounts(W);
+  for (const k in EXPECTED.params) if (pc[k] !== EXPECTED.params[k]) errs.push(`parameter count ${k}: got ${pc[k]} expected ${EXPECTED.params[k]}`);
+  return { errs, actual, params: pc };
+}
+
+/* =====================================================================
+   Preset clothing shapes (hand-drawn approximations)
+   ===================================================================== */
+function presetImage(k, jit) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 28; const c = cv.getContext('2d');
+  c.fillStyle = '#000'; c.fillRect(0, 0, 28, 28); c.save();
+  if (jit) { c.translate(14 + jit.dx, 14 + jit.dy); c.scale(jit.s, jit.s); c.translate(-14, -14); }
+  const P = (pts, col) => { c.fillStyle = col; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill(); };
+  const L = (pts, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); };
+  switch (k) {
+    case 0: P([[9, 4], [12, 5.5], [16, 5.5], [19, 4], [25.5, 8], [23, 13.5], [20, 11.5], [20, 25], [8, 25], [8, 11.5], [5, 13.5], [2.5, 8]], '#d8d8d8'); L([[12, 5.5], [14, 7.5], [16, 5.5]], '#777', .9); break;
+    case 1: P([[9, 3], [19, 3], [20.5, 26], [15.8, 26], [14, 10], [12.2, 26], [7.5, 26]], '#c8c8c8'); L([[9, 4], [19, 4]], '#fff', 1); break;
+    case 2: P([[9.5, 4], [12, 5], [16, 5], [18.5, 4], [22.5, 5.5], [26, 23], [22.5, 23.8], [20, 12], [20, 25], [8, 25], [8, 12], [5.5, 23.8], [2, 23], [5.5, 5.5]], '#bdbdbd'); L([[8.5, 24], [19.5, 24]], '#eee', 1.2); break;
+    case 3: P([[11, 2], [12.5, 2], [14, 4], [15.5, 2], [17, 2], [17.5, 9], [16.8, 11], [22, 26], [6, 26], [11.2, 11], [10.5, 9]], '#d0d0d0'); L([[11, 10], [17, 10]], '#888', .8); break;
+    case 4: P([[9.5, 3], [12, 4], [16, 4], [18.5, 3], [22.5, 4.5], [26, 25], [22.5, 25.8], [20.5, 12], [20.5, 27], [7.5, 27], [7.5, 12], [5.5, 25.8], [2, 25], [5.5, 4.5]], '#a8a8a8'); L([[14, 7], [14, 27]], '#333', .9); L([[12, 4], [14, 8], [16, 4]], '#ddd', 1.2); break;
+    case 5: L([[3, 21.5], [25, 21.5]], '#ddd', 2.4); L([[5, 21], [11, 14], [17, 21]], '#cfcfcf', 1.4); L([[13, 21], [19, 15], [23, 21]], '#cfcfcf', 1.4); L([[11, 14], [19, 15]], '#bbb', 1.2); break;
+    case 6: P([[9.5, 4], [12, 4.5], [16, 4.5], [18.5, 4], [22.5, 6], [25, 20], [22, 20.5], [20, 12], [20, 25.5], [8, 25.5], [8, 12], [6, 20.5], [3, 20], [5.5, 6]], '#b5b5b5'); L([[11.5, 4.5], [14, 8], [16.5, 4.5]], '#efefef', 1.3); L([[14, 8], [14, 25]], '#6a6a6a', .7); c.fillStyle = '#4a4a4a'; for (const y of [11, 15, 19, 23]) c.fillRect(13.6, y, .9, .9); break;
+    case 7: P([[2, 19], [4, 13.5], [9, 12.5], [13, 15], [20, 16], [25, 18.5], [26, 21.5], [26, 23.5], [2, 23.5]], '#c8c8c8'); L([[2, 23], [26, 23]], '#fff', 1.4); L([[8, 13.5], [10, 15.5]], '#555', .7); L([[10, 13.5], [12, 15.5]], '#555', .7); break;
+    case 8: c.fillStyle = '#bdbdbd'; c.fillRect(4, 11, 20, 14); c.strokeStyle = '#ddd'; c.lineWidth = 1.6; c.beginPath(); c.arc(14, 11, 6, Math.PI, 0); c.stroke(); L([[4, 15], [24, 15]], '#888', .8); break;
+    case 9: P([[6, 4], [15, 4], [15.5, 14], [23, 17], [26, 20], [26, 24], [5, 24], [5.5, 14]], '#a0a0a0'); L([[5, 23.5], [26, 23.5]], '#e5e5e5', 1.2); c.fillStyle = '#ddd'; c.fillRect(5, 21, 4, 3); break;
+  }
+  c.restore();
+  const d = c.getImageData(0, 0, 28, 28).data, out = new Float32Array(784);
+  for (let i = 0; i < 784; i++) out[i] = d[i * 4] / 255;
+  return out;
+}
+
+/* =====================================================================
+   Weights: illustrative (hand-made) and real (loaded)
+   ===================================================================== */
+const NAMED = [
+  { n: 'Vertical edge', k: [-1, 0, 1, -2, 0, 2, -1, 0, 1], b: 0, d: 'Lights up blue where the image gets brighter from left to right (the left edge of a garment) and red where it gets darker (the right edge).' },
+  { n: 'Horizontal edge', k: [-1, -2, -1, 0, 0, 0, 1, 2, 1], b: 0, d: 'Responds to brightness changing from top to bottom: blue on top edges, red on bottom edges.' },
+  { n: 'Blur', k: Array(9).fill(1 / 9), b: 0, d: 'Averages the 3×3 neighbourhood: a softer copy of the image. Never negative here, because pixels are ≥ 0.' },
+  { n: 'Vertical edge (flipped)', k: [1, 0, -1, 2, 0, -2, 1, 0, -1], b: 0 },
+  { n: 'Horizontal edge (flipped)', k: [1, 2, 1, 0, 0, 0, -1, -2, -1], b: 0 },
+  { n: 'Diagonal ↘', k: [0, 1, 2, -1, 0, 1, -2, -1, 0], b: 0 },
+  { n: 'Diagonal ↙', k: [2, 1, 0, 1, 0, -1, 0, -1, -2], b: 0 },
+  { n: 'Diagonal ↘ (flipped)', k: [0, -1, -2, 1, 0, -1, 2, 1, 0], b: 0 },
+  { n: 'Diagonal ↙ (flipped)', k: [-2, -1, 0, -1, 0, 1, 0, 1, 2], b: 0 },
+  { n: 'Sharpen', k: [0, -1, 0, -1, 5, -1, 0, -1, 0], b: 0 },
+  { n: 'Spot', k: [-1, -1, -1, -1, 8, -1, -1, -1, -1], b: 0 },
+  { n: 'Identity', k: [0, 0, 0, 0, 1, 0, 0, 0, 0], b: 0 },
+  { n: 'Darkness', k: [0, 0, 0, 0, -1, 0, 0, 0, 0], b: 1 },
+  { n: 'Top row', k: [1 / 3, 1 / 3, 1 / 3, 0, 0, 0, 0, 0, 0], b: 0 },
+  { n: 'Left column', k: [1 / 3, 0, 0, 1 / 3, 0, 0, 1 / 3, 0, 0], b: 0 },
+  { n: 'X pattern', k: [.2, 0, .2, 0, .2, 0, .2, 0, .2], b: 0 },
+];
+let PRESETS = [];
+function buildIllustrative() {
+  const W = { mean: 0, std: 1, real: false };
+  W.c1w = new Float32Array(144); W.c1b = new Float32Array(16);
+  NAMED.forEach((f, i) => { f.k.forEach((v, j) => W.c1w[i * 9 + j] = v); W.c1b[i] = f.b; });
+  W.c2w = new Float32Array(16 * 16 * 9); W.c2b = new Float32Array(16);
+  for (let o = 0; o < 16; o++) W.c2w[(o * 16 + o) * 9 + 4] = 1; // identity: channel o passes through
+  W.fw = new Float32Array(7840); W.fb = new Float32Array(10);
+  // "template" linear layer: each class's weights = its preset's centred, normalised feature vector
+  const feats = PRESETS.map(p => forward(p, W).flat.d);
+  for (let c = 0; c < 10; c++) {
+    const f = feats[c]; let m = 0; for (const v of f) m += v; m /= 784;
+    let n = 0; for (const v of f) n += (v - m) ** 2; n = Math.sqrt(n) || 1;
+    for (let i = 0; i < 784; i++) W.fw[c * 784 + i] = (f[i] - m) / n;
+  }
+  let diag = 0; for (let c = 0; c < 10; c++) diag += linear({ d: feats[c] }, W.fw, W.fb, 10).d[c];
+  const s = 7 / (diag / 10); for (let i = 0; i < W.fw.length; i++) W.fw[i] *= s;
+  return W;
+}
+let ILLW = null, REALW = null, SRC = 'illus';
+const curW = () => SRC === 'real' && REALW ? REALW : ILLW;
+
+function flattenNested(a) { const shape = []; let t = a; while (Array.isArray(t)) { shape.push(t.length); t = t[0]; } return { shape, data: Float32Array.from(a.flat(Infinity)) }; }
+function parseWeights(obj) {
+  const errs = []; let list = [];
+  if (obj && Array.isArray(obj.params)) list = obj.params.map(p => { const fl = Array.isArray(p.data) ? p.data.flat(Infinity) : []; return { name: String(p.name), shape: (p.shape || []).map(Number), data: Float32Array.from(fl) }; });
+  else if (obj && typeof obj === 'object') for (const [k, v] of Object.entries(obj.state_dict || obj)) if (Array.isArray(v)) { const f = flattenNested(v); list.push({ name: k, ...f }); }
+  if (!list.length) return { errs: ['No tensors found. Expected {"params": [{name, shape, data}, …]} from the Colab snippet.'] };
+  const W = { real: true }; let last = null;
+  for (const p of list) {
+    const n = p.shape.reduce((a, b) => a * b, 1);
+    if (n !== p.data.length) { errs.push(`"${p.name}": shape (${p.shape}) needs ${n} numbers but has ${p.data.length}`); continue; }
+    const s = p.shape.join('x');
+    if (s === '16x1x3x3' && !W.c1w) { W.c1w = p.data; last = 'c1'; }
+    else if (s === '16x16x3x3' && !W.c2w) { W.c2w = p.data; last = 'c2'; }
+    else if (s === '10x784' && !W.fw) { W.fw = p.data; last = 'f'; }
+    else if (s === '16' && last === 'c1' && !W.c1b) W.c1b = p.data;
+    else if (s === '16' && last === 'c2' && !W.c2b) W.c2b = p.data;
+    else if (s === '10' && last === 'f' && !W.fb) W.fb = p.data;
+    else errs.push(`Unexpected tensor "${p.name}" with shape (${p.shape.join(', ')}). The model must be exactly conv1 → conv2 → linear.`);
+  }
+  for (const [k, nm] of [['c1w', 'conv1 weight (16,1,3,3)'], ['c1b', 'conv1 bias (16)'], ['c2w', 'conv2 weight (16,16,3,3)'], ['c2b', 'conv2 bias (16)'], ['fw', 'linear weight (10,784)'], ['fb', 'linear bias (10)']]) if (!W[k]) errs.push('Missing ' + nm);
+  W.mean = obj.mean != null ? Number(obj.mean) : 0; W.std = obj.std != null ? Number(obj.std) : 1;
+  if (!Number.isFinite(W.mean) || !(W.std > 0)) errs.push('mean/std must be numbers with std > 0');
+  if (errs.length) return { errs };
+  for (const k of ['c1w', 'c1b', 'c2w', 'c2b', 'fw', 'fb']) for (const v of W[k]) if (!Number.isFinite(v)) { errs.push(`Non-finite number in ${k}`); break; }
+  return { errs, W };
+}
+
+/* =====================================================================
+   Shared image state
+   ===================================================================== */
+const IMG = new Float32Array(784);
+const imgListeners = []; let imgTimer = null;
+function imageChanged() {
+  drawPaint(); drawNums(); drawThumb();
+  clearTimeout(imgTimer); imgTimer = setTimeout(() => imgListeners.forEach(f => f()), 120);
+}
+const srcListeners = [];
+function setSource(s) {
+  SRC = s;
+  $$('.srcseg button').forEach(b => b.classList.toggle('sel', b.dataset.src === s));
+  srcListeners.forEach(f => f());
+  imgListeners.forEach(f => f());
+}
+
+/* =====================================================================
+   MCQ / predict component
+   ===================================================================== */
+function mcq(root, spec) {
+  const predict = spec.mode === 'predict';
+  root.innerHTML = '';
+  root.append(h('div', { class: 'qh' }, predict ? 'Predict, then reveal' : 'Check'));
+  root.append(h('div', { class: 'q', html: spec.q }));
+  const fb = h('div'); const btns = [];
+  spec.opts.forEach((o, i) => {
+    const b = h('button', { class: 'opt', html: o.t });
+    b.addEventListener('click', () => {
+      if (b.disabled) return;
+      const right = !!o.ok;
+      b.classList.add(right ? 'right' : 'wrong');
+      fb.innerHTML = '';
+      const msg = h('div', { class: 'fb ' + (right ? 'ok' : 'no'), html: (right ? '<b class="c-green">✓ Right.</b> ' : '<b class="c-red">✗ Not quite.</b> ') + o.why });
+      fb.append(msg);
+      if (right || predict) {
+        btns.forEach((bb, j) => { bb.disabled = true; if (spec.opts[j].ok) bb.classList.add('right'); });
+        if (!right) fb.append(h('div', { class: 'fb ok', html: '<b class="c-green">Answer:</b> ' + spec.opts.find(x => x.ok).why }));
+        const others = spec.opts.filter((x, j) => j !== i && !x.ok);
+        if (others.length) {
+          const d = h('details'); d.append(h('summary', {}, right ? 'Why the other answers are wrong' : 'Why the rest are wrong'));
+          const ul = h('ul', { class: 'others' }); others.forEach(x => ul.append(h('li', { html: `<b>${x.t}</b>: ${x.why}` }))); d.append(ul); fb.append(d);
+        }
+        if (spec.after) spec.after(right);
+      } else b.disabled = true;
+    });
+    btns.push(b); root.append(b);
+  });
+  root.append(fb);
+}
+
+/* =====================================================================
+   §1 Pipeline map
+   ===================================================================== */
+const STEPS = [
+  { short: 'Data', name: 'Load data', sec: 's2', takes: 'The FashionMNIST files: 70,000 grayscale 28×28 images, each with a label 0–9.', does: 'Turns pixels into tensors (blocks of numbers), normalizes them, keeps 60,000 for training and 10,000 for testing, and deals them out in shuffled batches of 64.', gives: 'Batches: images of shape (64, 1, 28, 28) plus labels of shape (64,).', code: 'train_loader = DataLoader(train_set,\n    batch_size=64, shuffle=True)' },
+  { short: 'Model', name: 'Define model', sec: 's3', takes: 'Your description of the layers: conv → ReLU → pool, twice, then flatten → linear.', does: 'Builds the layers and fills their 10,330 parameters with small random numbers. No image goes through it yet.', gives: 'A model: a function that will turn a batch of images into 10 scores (logits) per image.', code: 'model = CNN()   # builds it, runs nothing' },
+  { short: 'Loss', name: 'Loss function', sec: 's7', takes: 'The model\'s logits (64, 10) and the true labels (64,).', does: 'Softmax turns each row of logits into probabilities. Cross-entropy takes −ln(probability of the true class), averaged over the batch.', gives: 'One number: how wrong the model is on this batch. It only measures.', code: 'loss_fn = nn.CrossEntropyLoss()' },
+  { short: 'Optimizer', name: 'Optimizer', sec: 's8', takes: 'The model\'s parameters and a learning rate.', does: 'After backprop has stored a gradient on every weight, it nudges each weight a small step against its gradient.', gives: 'Updated weights, a little better than before.', code: 'optimizer = torch.optim.SGD(\n    model.parameters(), lr=0.01)  # or Adam' },
+  { short: 'Loop', name: 'Training loop', sec: 's9', takes: 'Model, training batches, loss function, optimizer.', does: 'For each epoch, for each batch: forward → loss → backward (gradients) → step (update).', gives: 'Trained weights, plus a history of loss values.', code: 'for epoch in range(EPOCHS):\n  for x, y in train_loader:\n    ...' },
+  { short: 'Evaluate', name: 'Evaluate', sec: 's10', takes: 'The trained model and the test set: 10,000 images it never trained on.', does: 'Forward passes only, with no gradients and no updates. Compares each prediction to the true label.', gives: 'Test accuracy and a confusion matrix: how well it generalizes.', code: 'model.eval()\nwith torch.no_grad(): ...' },
+];
+let openStep = -1, activeStep = -1;
+function initPipe() {
+  const strip = $('#strip');
+  STEPS.forEach((s, i) => {
+    const b = h('button', { class: 'pstep', 'aria-label': `Step ${i + 1}: ${s.name}` }, h('span', { class: 'pn' }, String(i + 1)), h('span', { class: 'pl' }, s.short));
+    b.addEventListener('click', () => toggleCard(i)); strip.append(b);
+  });
+  const flow = $('#flow');
+  const items = [['(1,28,28)', 'conv1'], ['(16,28,28)', 'ReLU · pool'], ['(16,14,14)', 'conv2'], ['(16,14,14)', 'ReLU · pool'], ['(16,7,7)', 'flatten'], ['(784)', 'linear'], ['(10)', null]];
+  items.forEach(([sh, op], i) => { const e = h('span', { class: 'sh' }, sh); e.style.animationDelay = (i * 1) + 's'; flow.append(e); if (op) flow.append(h('span', { class: 'op' }, '→ ' + op + ' →')); });
+  let ticking = false;
+  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; updateHere(); }); } }, { passive: true });
+  updateHere();
+}
+function toggleCard(i) {
+  const pc = $('#pcard');
+  if (openStep === i) { openStep = -1; pc.hidden = true; }
+  else {
+    openStep = i; const s = STEPS[i]; pc.hidden = false; pc.innerHTML = '';
+    const close = h('button', { class: 'btn', style: 'min-height:30px;padding:2px 10px' }, '✕'); close.onclick = () => toggleCard(i);
+    pc.append(h('h4', {}, h('span', {}, `Step ${i + 1} · ${s.name}`), close));
+    const g = h('div', { class: 'tgd' });
+    g.append(h('span', { class: 'k c-blue' }, 'Takes'), h('span', {}, s.takes), h('span', { class: 'k c-yellow' }, 'Does'), h('span', {}, s.does), h('span', { class: 'k c-green' }, 'Gives'), h('span', {}, s.gives));
+    pc.append(g, h('pre', {}, s.code));
+    const go = h('button', { class: 'btn primary' }, `Go to §${$('#' + s.sec).dataset.n} →`);
+    go.onclick = () => { toggleCard(i); $('#' + s.sec).scrollIntoView({ behavior: 'smooth' }); };
+    pc.append(go);
+  }
+  $$('.pstep').forEach((b, j) => b.classList.toggle('open', j === openStep));
+}
+function updateHere() {
+  const line = $('#pipe').getBoundingClientRect().bottom + window.innerHeight * .3;
+  let cur = $('#s1');
+  for (const s of $$('section.sec')) if (s.getBoundingClientRect().top < line) cur = s;
+  const step = +cur.dataset.step;
+  if (step !== activeStep || $('#here').dataset.sec !== cur.id) {
+    activeStep = step; $('#here').dataset.sec = cur.id;
+    $$('.pstep').forEach((b, j) => { b.classList.toggle('active', j === step); b.classList.toggle('done', step >= 0 && j < step); });
+    $('#here').innerHTML = `<b>§${cur.dataset.n} ${cur.dataset.title}</b>` + (step >= 0 ? ` · step ${step + 1}: ${STEPS[step].name}` : ' · tap a step above');
+  }
+}
+
+/* =====================================================================
+   Tooltip terms
+   ===================================================================== */
+function initTerms() {
+  const pop = $('#pop');
+  document.addEventListener('click', e => {
+    const t = e.target.closest('.t');
+    if (!t) { pop.hidden = true; return; }
+    pop.textContent = t.dataset.d; pop.hidden = false;
+    const r = t.getBoundingClientRect(); const w = Math.min(300, window.innerWidth - 32);
+    pop.style.width = w + 'px';
+    pop.style.left = clamp(r.left + window.scrollX, 16, window.innerWidth - w - 16) + 'px';
+    pop.style.top = (r.bottom + window.scrollY + 6) + 'px';
+  });
+}
+
+/* =====================================================================
+   §1 weights loader
+   ===================================================================== */
+const COLAB = `# Export trained weights for phase0-cnn-explorer.html
+import json, torch
+
+model.eval()
+# If you used transforms.Normalize((m,), (s,)),
+# put m and s here. ToTensor only? keep 0.0, 1.0
+MEAN, STD = 0.0, 1.0
+
+params = []
+for name, t in model.state_dict().items():
+    params.append({
+        "name": name,
+        "shape": list(t.shape),
+        "data": t.detach().cpu().flatten().tolist(),
+    })
+
+with open("phase0_weights.json", "w") as f:
+    json.dump({"format": "phase0-cnn-v1",
+               "mean": MEAN, "std": STD,
+               "params": params}, f)
+
+from google.colab import files
+files.download("phase0_weights.json")`;
+function initWeights() {
+  $('#colab').textContent = COLAB;
+  $('#copycolab').onclick = async () => { try { await navigator.clipboard.writeText(COLAB); $('#copycolab').textContent = 'Copied ✓'; } catch (e) { $('#copycolab').textContent = 'Select the text above to copy'; } };
+  $$('[data-loadw]').forEach(b => b.onclick = () => $('#wfile').click());
+  $$('.srcseg').forEach(s => { s.innerHTML = ''; const seg = h('div', { class: 'seg' }); for (const [k, l] of [['illus', 'Illustrative'], ['real', 'Mine']]) { const b = h('button', { 'data-src': k, class: k === SRC ? 'sel' : '' }, l); b.onclick = () => setSource(k); seg.append(b); } s.append(seg); });
+  $('#wfile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return; const st = $('#wstatus');
+    try {
+      const obj = JSON.parse(await f.text());
+      const { errs, W } = parseWeights(obj);
+      if (errs.length) throw new Error(errs.join('\n'));
+      const v = verifyModel(W);
+      if (v.errs.length) throw new Error(v.errs.join('\n'));
+      REALW = W; $$('.srcseg').forEach(s => s.hidden = false);
+      st.className = 'small'; st.innerHTML = `<span class="illus real">your weights</span> Loaded <b>${f.name}</b>: ${fmtInt(v.params.total)} parameters ✓, all shapes match. Normalization mean ${W.mean}, std ${W.std}.`;
+      setSource('real');
+    } catch (err) {
+      st.className = 'small'; st.innerHTML = '<b class="c-red">Could not load these weights:</b><br>' + String(err.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n/g, '<br>');
+    }
+    e.target.value = '';
+  });
+  srcListeners.push(() => {
+    const real = SRC === 'real' && REALW;
+    for (const id of ['s3badge', 's3badge2', 's4badge', 's6badge', 's6badge2']) {
+      const b = $('#' + id); b.className = 'illus' + (real ? ' real' : '');
+      b.textContent = real ? 'your trained weights' : (id === 's3badge' ? 'illustrative · hand-made' : id === 's6badge' ? 'illustrative weights' : 'illustrative');
+    }
+  });
+}
+
+/* =====================================================================
+   §2 Data
+   ===================================================================== */
+let tool = 'pen', win = { x: 10, y: 10 }, numStage = 0, numFrom = 0, numT = 1, numCancel = null;
+let pctx, tctx;
+const NORM = () => (SRC === 'real' && REALW && REALW.std !== 1) ? { m: REALW.mean, s: REALW.std, mine: true } : { m: 0.2860, s: 0.3530, mine: false };
+function drawPaint() {
+  const c = pctx; c.fillStyle = '#000'; c.fillRect(0, 0, 280, 280);
+  for (let y = 0; y < 28; y++) for (let x = 0; x < 28; x++) { const v = IMG[y * 28 + x]; if (v > 0.003) { c.fillStyle = grayCol(v); c.fillRect(x * 10, y * 10, 10, 10); } }
+  c.strokeStyle = 'rgba(255,255,255,.06)'; c.lineWidth = 1; c.beginPath();
+  for (let i = 1; i < 28; i++) { c.moveTo(i * 10 + .5, 0); c.lineTo(i * 10 + .5, 280); c.moveTo(0, i * 10 + .5); c.lineTo(280, i * 10 + .5); }
+  c.stroke();
+  c.setLineDash([4, 3]); c.strokeStyle = 'rgba(255,210,63,.8)'; c.strokeRect(win.x * 10 + 1, win.y * 10 + 1, 68, 68); c.setLineDash([]);
+}
+function drawThumb() {
+  const c = tctx; for (let i = 0; i < 784; i++) { c.fillStyle = grayCol(IMG[i]); c.fillRect((i % 28) * 4, (i / 28 | 0) * 4, 4, 4); }
+  c.strokeStyle = COL && '#ffd23f'; c.lineWidth = 1.5; c.strokeRect(win.x * 4 + .75, win.y * 4 + .75, 26.5, 26.5);
+}
+function stageVal(st, v) { const n = NORM(); return st === 0 ? Math.round(v * 255) : st === 1 ? v : (v - n.m) / n.s; }
+function drawNums() {
+  const g = $('#nums'); if (!g.children.length) for (let i = 0; i < 49; i++) g.append(h('div'));
+  const n = NORM();
+  [...g.children].forEach((d, i) => {
+    const x = win.x + i % 7, y = win.y + (i / 7 | 0), v = IMG[y * 28 + x];
+    const a = stageVal(numFrom, v), b = stageVal(numStage, v); const t = ease(numT);
+    const val = lerp(a, b, t);
+    d.textContent = numStage === 0 && t >= 1 ? String(Math.round(val)) : (numStage === 0 ? String(Math.round(val)) : fmt(val, 2));
+    if (numStage === 2) { d.style.background = divCol(val, 2.2); d.style.color = '#fff'; }
+    else { d.style.background = grayCol(v * .85 + .05); d.style.color = v > .55 ? '#111' : '#ddd'; }
+    d.classList.toggle('ctr', i === 24);
+  });
+  const v = IMG[(win.y + 3) * 28 + win.x + 3], raw = Math.round(v * 255), s1 = v, s2 = (v - n.m) / n.s;
+  const hl = st => numStage === st ? 'c-yellow' : '';
+  $('#formula').innerHTML = `<span class="${hl(0)}">${raw}</span> → ÷255 → <span class="${hl(1)}">${fmt(s1, 3)}</span><br>(${fmt(s1, 3)} − ${n.m}) ÷ ${n.s} = <span class="${hl(2)} ${s2 < 0 ? 'c-red' : 'c-blue'}">${fmt(s2, 3)}</span>`;
+  $('#normnote').innerHTML = n.mine ? `Using <b>your</b> normalization from the loaded weights (mean ${n.m}, std ${n.s}).` : 'Uses FashionMNIST\'s usual mean 0.2860 and std 0.3530. If your code used <code>Normalize((0.5,), (0.5,))</code> or no Normalize at all, your numbers differ but the idea is the same.';
+}
+function setNumStage(st) {
+  if (st === numStage) return; numFrom = numStage; numStage = st; numT = 0;
+  $$('#stageseg button').forEach(b => b.classList.toggle('sel', +b.dataset.st === st));
+  if (numCancel) numCancel(); numCancel = tween(450, t => { numT = t; drawNums(); });
+}
+function stamp(fx, fy) {
+  for (let y = Math.floor(fy - 2); y <= Math.ceil(fy + 2); y++) for (let x = Math.floor(fx - 2); x <= Math.ceil(fx + 2); x++) {
+    if (x < 0 || y < 0 || x > 27 || y > 27) continue;
+    const d = Math.hypot(x + .5 - fx, y + .5 - fy), w = clamp((1.8 - d) / .9, 0, 1), i = y * 28 + x;
+    if (tool === 'pen') IMG[i] = Math.max(IMG[i], w); else IMG[i] = Math.min(IMG[i], 1 - w);
+  }
+}
+function loadImage(arr) { IMG.set(arr); imageChanged(); }
+function makeBatch() {
+  const rnd = mulberry32(Date.now() & 0xffff); const b = $('#batch'); b.innerHTML = ''; const labels = [];
+  for (let i = 0; i < 8; i++) {
+    const k = rnd() * 10 | 0; labels.push(k);
+    const img = presetImage(k, { dx: (rnd() - .5) * 3, dy: (rnd() - .5) * 3, s: .88 + rnd() * .16 });
+    const cv = h('canvas'); cv.width = cv.height = 28; const c = cv.getContext('2d'); const id = c.createImageData(28, 28);
+    for (let j = 0; j < 784; j++) { const g = Math.round(img[j] * 255 * (.85 + rnd() * .15)); id.data.set([g, g, g, 255], j * 4); }
+    c.putImageData(id, 0, 0);
+    b.append(h('figure', {}, cv, h('figcaption', {}, h('b', {}, String(k)), ' ' + SHORT[k])));
+  }
+  $('#labelsT').innerHTML = `labels = tensor([<span class="c-green">${labels.join(', ')}</span>, … 56 more])`;
+}
+function initData() {
+  const pc = $('#paint'); pctx = setupCanvas(pc, 280, 280); const th = $('#thumb'); tctx = setupCanvas(th, 112, 112);
+  let drawing = false, last = null;
+  pc.addEventListener('pointerdown', e => { drawing = true; pc.setPointerCapture(e.pointerId); const p = evPos(pc, e); stamp(p[0] / 10, p[1] / 10); last = p; imageChanged(); e.preventDefault(); });
+  pc.addEventListener('pointermove', e => {
+    if (!drawing) return; const p = evPos(pc, e); const dist = Math.hypot(p[0] - last[0], p[1] - last[1]); const n = Math.max(1, Math.ceil(dist / 3));
+    for (let i = 1; i <= n; i++) stamp(lerp(last[0], p[0], i / n) / 10, lerp(last[1], p[1], i / n) / 10);
+    last = p; imageChanged(); $$('#presets .chip').forEach(c => c.classList.remove('sel')); e.preventDefault();
+  });
+  const stop = () => { drawing = false; }; pc.addEventListener('pointerup', stop); pc.addEventListener('pointercancel', stop);
+  th.addEventListener('pointerdown', e => { const p = evPos(th, e); win.x = clamp(Math.round(p[0] / 4 - 3.5), 0, 21); win.y = clamp(Math.round(p[1] / 4 - 3.5), 0, 21); drawThumb(); drawPaint(); drawNums(); });
+  $$('#toolseg button').forEach(b => b.onclick = () => { tool = b.dataset.tool; $$('#toolseg button').forEach(x => x.classList.toggle('sel', x === b)); });
+  $('#clear').onclick = () => { loadImage(new Float32Array(784)); $$('#presets .chip').forEach(c => c.classList.remove('sel')); };
+  const pr = $('#presets');
+  CLASSES.forEach((n, k) => { const c = h('button', { class: 'chip' }, n); c.onclick = () => { loadImage(PRESETS[k]); $$('#presets .chip').forEach(x => x.classList.toggle('sel', x === c)); }; pr.append(c); });
+  $$('#stageseg button').forEach(b => b.onclick = () => setNumStage(+b.dataset.st));
+  $('#newbatch').onclick = makeBatch; makeBatch();
+  srcListeners.push(drawNums);
+  pr.children[0].click();
+}
+
+/* =====================================================================
+   §3 Convolution
+   ===================================================================== */
+const conv = { f: 0, cur: 0, playing: false, sp: 1, acc: 0, map: new Float32Array(784), max: 1, xin: new Float32Array(784), maps: [] };
+const SPEEDS = [2.5, 14, 90];
+let cinC, coutC, mapsC;
+function filterOf(k) { const W = curW(); return { w: W.c1w.slice(k * 9, k * 9 + 9), b: W.c1b[k] }; }
+function recomputeConv() {
+  const W = curW(); for (let i = 0; i < 784; i++) conv.xin[i] = (IMG[i] - W.mean) / W.std;
+  const all = conv2d(conv.xin, [1, 28, 28], W.c1w, W.c1b, 16);
+  conv.maps = []; for (let k = 0; k < 16; k++) conv.maps.push(all.d.slice(k * 784, k * 784 + 784));
+  conv.map = conv.maps[conv.f]; conv.max = maxAbs(conv.map);
+  drawConv(); drawMaps16(); reluRefresh();
+}
+function patchAt(i) { const y = i / 28 | 0, x = i % 28, p = []; for (let ky = 0; ky < 3; ky++) for (let kx = 0; kx < 3; kx++) { const yy = y + ky - 1, xx = x + kx - 1; p.push(yy < 0 || xx < 0 || yy > 27 || xx > 27 ? null : conv.xin[yy * 28 + xx]); } return p; }
+function drawConv() {
+  const c = cinC; c.fillStyle = '#0b0d12'; c.fillRect(0, 0, 150, 150);
+  for (let py = 0; py < 30; py++) for (let px = 0; px < 30; px++) {
+    if (py === 0 || px === 0 || py === 29 || px === 29) { c.fillStyle = '#1a1f29'; c.fillRect(px * 5 + .5, py * 5 + .5, 4, 4); }
+    else { c.fillStyle = grayCol(IMG[(py - 1) * 28 + px - 1]); c.fillRect(px * 5, py * 5, 5, 5); }
+  }
+  const y = conv.cur / 28 | 0, x = conv.cur % 28;
+  c.strokeStyle = '#ffd23f'; c.lineWidth = 1.5; c.strokeRect(x * 5 + .75, y * 5 + .75, 13.5, 13.5);
+  const o = coutC; o.fillStyle = '#0b0d12'; o.fillRect(0, 0, 150, 150);
+  o.strokeStyle = '#2a3140'; o.lineWidth = 1; o.strokeRect(4.5, 4.5, 141, 141);
+  for (let i = 0; i <= conv.cur; i++) { o.fillStyle = divCol(conv.map[i], conv.max); o.fillRect(5 + (i % 28) * 5, 5 + (i / 28 | 0) * 5, 5, 5); }
+  o.strokeStyle = '#ffd23f'; o.lineWidth = 1.5; o.strokeRect(5 + x * 5 - .75, 5 + y * 5 - .75, 6.5, 6.5);
+  // math
+  const f = filterOf(conv.f), p = patchAt(conv.cur); let sum = 0;
+  const gp = $('#gp').children, gw = $('#gw').children, gx = $('#gx').children;
+  const wm = maxAbs(f.w);
+  for (let j = 0; j < 9; j++) {
+    const pv = p[j] === null ? 0 : p[j], prod = pv * f.w[j]; sum += prod;
+    gp[j].textContent = p[j] === null ? '0' : sfmt(pv); gp[j].style.background = p[j] === null ? '#1a1f29' : (curW().real ? divCol(pv, 2.5) : grayCol(pv * .8)); gp[j].style.color = p[j] === null ? '#566' : (!curW().real && pv > .55 ? '#111' : '#eee'); gp[j].style.fontStyle = p[j] === null ? 'italic' : '';
+    gw[j].textContent = sfmt(f.w[j]); gw[j].style.background = divCol(f.w[j], wm); gw[j].style.boxShadow = 'inset 0 0 0 1px rgba(180,142,240,.55)';
+    gx[j].textContent = sfmt(prod); gx[j].style.background = divCol(prod, Math.max(conv.max / 2, .01));
+  }
+  const tot = sum + f.b;
+  $('#csum').innerHTML = `sum of 9 products = ${fmt(sum, 3)} + bias ${fmt(f.b, 2)}<br>= <b class="${tot >= 0 ? 'c-blue' : 'c-red'}">${fmt(tot, 3)}</b> → output row ${y}, col ${x}`;
+}
+function drawMaps16() {
+  const c = mapsC; c.fillStyle = '#141821'; c.fillRect(0, 0, 320, 84);
+  for (let k = 0; k < 16; k++) {
+    const ox = 2 + (k % 8) * 39.5, oy = 2 + (k / 8 | 0) * 41, m = conv.maps[k], mx = maxAbs(m), s = 36 / 28;
+    for (let i = 0; i < 784; i++) { c.fillStyle = divCol(m[i], mx); c.fillRect(ox + (i % 28) * s, oy + (i / 28 | 0) * s, s + .3, s + .3); }
+    c.strokeStyle = k === conv.f ? '#ffd23f' : '#2a3140'; c.lineWidth = k === conv.f ? 2 : 1; c.strokeRect(ox - .5, oy - .5, 37, 37);
+  }
+}
+function selectFilter(k) {
+  conv.f = k; conv.map = conv.maps[k]; conv.max = maxAbs(conv.map); conv.cur = 783; stopConv();
+  const real = curW().real;
+  $$('#fchips .chip').forEach((c, i) => c.classList.toggle('sel', i === k));
+  $('#fdesc').innerHTML = real ? `<b>Your conv1 filter #${k}</b>. Training picked these 9 weights. Learned filters often look noisy, but many still respond to edges or blobs.` : `<b>${NAMED[k].n}.</b> ${NAMED[k].d || 'One of 16 hand-made filters standing in for your model\'s learned ones.'}`;
+  drawConv(); drawMaps16(); reluRefresh();
+}
+let convRaf = null, convLast = 0;
+function stopConv() { conv.playing = false; $('#cplay').textContent = '▶ Play'; if (convRaf) cancelAnimationFrame(convRaf); convRaf = null; }
+function playConv() {
+  if (conv.cur >= 783) conv.cur = 0;
+  conv.playing = true; $('#cplay').textContent = '⏸ Pause'; convLast = performance.now(); conv.acc = 0;
+  const f = ts => {
+    if (!conv.playing) return; conv.acc += (ts - convLast) / 1000 * SPEEDS[conv.sp]; convLast = ts;
+    const n = Math.floor(conv.acc); if (n > 0) { conv.acc -= n; conv.cur = Math.min(783, conv.cur + n); drawConv(); }
+    if (conv.cur >= 783) { stopConv(); return; } convRaf = requestAnimationFrame(f);
+  };
+  convRaf = requestAnimationFrame(f);
+}
+function buildChips() {
+  const fc = $('#fchips'); fc.innerHTML = '';
+  if (curW().real) { for (let k = 0; k < 16; k++) { const c = h('button', { class: 'chip' }, '#' + k); c.onclick = () => selectFilter(k); fc.append(c); } }
+  else NAMED.slice(0, 3).forEach((f, k) => { const c = h('button', { class: 'chip' }, f.n); c.onclick = () => selectFilter(k); fc.append(c); });
+}
+function initConv() {
+  cinC = setupCanvas($('#cin'), 150, 150); coutC = setupCanvas($('#cout'), 150, 150); mapsC = setupCanvas($('#maps16'), 320, 84);
+  for (const id of ['gp', 'gw', 'gx']) for (let j = 0; j < 9; j++) $('#' + id).append(h('div'));
+  $('#cplay').onclick = () => conv.playing ? stopConv() : playConv();
+  $('#cstep').onclick = () => { stopConv(); conv.cur = Math.min(783, conv.cur + 1); drawConv(); };
+  $('#cfinish').onclick = () => { stopConv(); conv.cur = 783; drawConv(); };
+  $('#creset').onclick = () => { stopConv(); conv.cur = 0; drawConv(); };
+  $$('#cspeed button').forEach(b => b.onclick = () => { conv.sp = +b.dataset.sp; $$('#cspeed button').forEach(x => x.classList.toggle('sel', x === b)); });
+  $('#cin').addEventListener('pointerdown', e => { const p = evPos($('#cin'), e); stopConv(); conv.cur = clamp(Math.floor(p[1] / 5) - 1, 0, 27) * 28 + clamp(Math.floor(p[0] / 5) - 1, 0, 27); drawConv(); });
+  $('#cout').addEventListener('pointerdown', e => { const p = evPos($('#cout'), e); stopConv(); conv.cur = clamp(Math.floor((p[1] - 5) / 5), 0, 27) * 28 + clamp(Math.floor((p[0] - 5) / 5), 0, 27); drawConv(); });
+  $('#maps16').addEventListener('click', e => { const p = evPos($('#maps16'), e); const k = clamp(Math.floor((p[0] - 2) / 39.5), 0, 7) + (p[1] > 42 ? 8 : 0); selectFilter(k); });
+  buildChips();
+  srcListeners.push(() => { buildChips(); conv.f = 0; });
+  imgListeners.push(() => { recomputeConv(); selectFilter(conv.f); });
+}
+
+/* =====================================================================
+   §4 ReLU & pooling
+   ===================================================================== */
+let rC, pC, reluT = 0, reluOn = false, reluCancel = null;
+const pool = { src: null, p14: null, p7: null, k1: 0, k2: 0, cancel: null };
+function reluRefresh() {
+  if (!rC) return;
+  pool.src = conv.map.map(v => v > 0 ? v : 0);
+  pool.p14 = maxpool2({ d: pool.src, s: [1, 28, 28] }).d; pool.p7 = maxpool2({ d: pool.p14, s: [1, 14, 14] }).d;
+  drawRelu(); drawPool();
+}
+function drawRelu() {
+  const c = rC, m = conv.max; let neg = 0;
+  for (let i = 0; i < 784; i++) { let v = conv.map[i]; if (v < 0) { neg++; v *= (1 - reluT); } c.fillStyle = divCol(v, m); c.fillRect((i % 28) * 9, (i / 28 | 0) * 9, 9, 9); }
+  c.strokeStyle = 'rgba(255,210,63,.8)'; c.lineWidth = 1.5; c.strokeRect(9 * 9 + .75, 14 * 9 + .75, 7 * 9 - 1.5, 9 - 1.5);
+  const left = reluT >= 1 ? 0 : neg;
+  $('#rmsg').innerHTML = reluT >= 1 ? `<span class="c-red">${neg}</span> negative cells → all set to <b>0</b>. Positives untouched.` : `<span class="c-red">${neg}</span> of 784 cells are negative (red).`;
+  const row = []; for (let x = 9; x < 16; x++) { const v = conv.map[14 * 28 + x], o = v > 0 ? v : 0; row.push(reluT >= 1 ? `<span class="${v < 0 ? 'c-red' : 'c-blue'}">${sfmt(v)}</span>→${sfmt(o)}` : `<span class="${v < 0 ? 'c-red' : 'c-blue'}">${sfmt(v)}</span>`); }
+  $('#rrow').innerHTML = 'yellow row: ' + row.join('  ');
+  void left;
+}
+function drawPool() {
+  const c = pC; c.fillStyle = '#141821'; c.fillRect(0, 0, 300, 178);
+  c.font = '11px ' + getComputedStyle(document.body).getPropertyValue('--mono'); c.fillStyle = '#98a2b3'; c.textAlign = 'center';
+  const m = maxAbs(pool.src);
+  const X1 = 4, X2 = 166, X3 = 258, Y = 22;
+  c.fillText('28×28', X1 + 70, 14); c.fillText('14×14', X2 + 35, 14); c.fillText('7×7', X3 + 17.5, 14);
+  for (let i = 0; i < 784; i++) { c.fillStyle = divCol(pool.src[i], m); c.fillRect(X1 + (i % 28) * 5, Y + (i / 28 | 0) * 5, 5, 5); }
+  c.strokeStyle = '#2a3140'; c.lineWidth = 1; c.strokeRect(X2 - .5, Y - .5, 71, 71); c.strokeRect(X3 - .5, Y - .5, 36, 36);
+  for (let i = 0; i < pool.k1; i++) { c.fillStyle = divCol(pool.p14[i], m); c.fillRect(X2 + (i % 14) * 5, Y + (i / 14 | 0) * 5, 5, 5); }
+  for (let i = 0; i < pool.k2; i++) { c.fillStyle = divCol(pool.p7[i], m); c.fillRect(X3 + (i % 7) * 5, Y + (i / 7 | 0) * 5, 5, 5); }
+  c.fillStyle = '#98a2b3'; c.fillText('→', 155, 95); c.fillText('→', 249, 60);
+  let msg = '';
+  c.strokeStyle = '#ffd23f'; c.lineWidth = 1.5;
+  if (pool.k1 > 0 && pool.k1 < 196) {
+    const i = pool.k1 - 1, y = i / 14 | 0, x = i % 14; c.strokeRect(X1 + x * 10, Y + y * 10, 10, 10); c.strokeRect(X2 + x * 5, Y + y * 5, 5, 5);
+    const v = [pool.src[(2 * y) * 28 + 2 * x], pool.src[(2 * y) * 28 + 2 * x + 1], pool.src[(2 * y + 1) * 28 + 2 * x], pool.src[(2 * y + 1) * 28 + 2 * x + 1]];
+    msg = `max(${v.map(sfmt).join(', ')}) = <b class="c-yellow">${sfmt(pool.p14[i])}</b>`;
+  } else if (pool.k2 > 0 && pool.k2 < 49) {
+    const i = pool.k2 - 1, y = i / 7 | 0, x = i % 7; c.strokeRect(X2 + x * 10, Y + y * 10, 10, 10); c.strokeRect(X3 + x * 5, Y + y * 5, 5, 5);
+    const v = [pool.p14[(2 * y) * 14 + 2 * x], pool.p14[(2 * y) * 14 + 2 * x + 1], pool.p14[(2 * y + 1) * 14 + 2 * x], pool.p14[(2 * y + 1) * 14 + 2 * x + 1]];
+    msg = `max(${v.map(sfmt).join(', ')}) = <b class="c-yellow">${sfmt(pool.p7[i])}</b>`;
+  } else if (pool.k2 === 49) msg = '784 numbers → 196 → 49. The strongest signals survive.';
+  else if (pool.k1 === 196) msg = '28×28 → 14×14: a quarter of the numbers.';
+  c.fillStyle = '#98a2b3'; c.textAlign = 'left'; c.fillText('(1 of 16 channels; all 16 pool the same way)', 4, 172);
+  $('#pmsg').innerHTML = msg;
+}
+function initRelu() {
+  rC = setupCanvas($('#rcv'), 252, 252); pC = setupCanvas($('#pcv'), 300, 178);
+  $('#rtog').onclick = () => {
+    reluOn = !reluOn; $('#rtog').textContent = reluOn ? 'Remove ReLU' : 'Apply ReLU'; $('#rtog').classList.toggle('on', reluOn);
+    if (reluCancel) reluCancel(); const from = reluT, to = reluOn ? 1 : 0;
+    reluCancel = tween(700, t => { reluT = lerp(from, to, ease(t)); drawRelu(); });
+  };
+  const run = (key, n, after) => { if (pool.cancel) pool.cancel(); pool[key] = 0; const start = performance.now(); let id; const f = ts => { pool[key] = Math.min(n, Math.floor((ts - start) / 1000 * (key === 'k1' ? 45 : 14)) + 1); drawPool(); if (pool[key] < n) id = requestAnimationFrame(f); else after && after(); }; id = requestAnimationFrame(f); pool.cancel = () => cancelAnimationFrame(id); };
+  $('#pool1').onclick = () => { pool.k2 = 0; $('#pool2').disabled = true; run('k1', 196, () => { $('#pool2').disabled = false; drawPool(); }); };
+  $('#pool2').onclick = () => { pool.k1 = 196; run('k2', 49, () => drawPool()); };
+  $('#preset').onclick = () => { if (pool.cancel) pool.cancel(); pool.k1 = 0; pool.k2 = 0; $('#pool2').disabled = true; drawPool(); };
+  reluRefresh();
+}
+
+/* =====================================================================
+   §5 Shapes and parameters
+   ===================================================================== */
+const LADDER = [
+  { k: 'input', name: 'Input', shape: '(1, 28, 28)', p: 0 },
+  { k: 'conv1', name: 'Conv2d 1→16, 3×3, pad 1', shape: '(16, 28, 28)', p: 160 },
+  { k: 'relu1', name: 'ReLU', shape: '(16, 28, 28)', p: 0, auto: 1 },
+  { k: 'pool1', name: 'MaxPool 2', shape: '(16, 14, 14)', p: 0 },
+  { k: 'conv2', name: 'Conv2d 16→16, 3×3, pad 1', shape: '(16, 14, 14)', p: 2320 },
+  { k: 'relu2', name: 'ReLU', shape: '(16, 14, 14)', p: 0, auto: 1 },
+  { k: 'pool2', name: 'MaxPool 2', shape: '(16, 7, 7)', p: 0 },
+  { k: 'flat', name: 'Flatten', shape: '(784)', p: 0 },
+  { k: 'logits', name: 'Linear 784→10', shape: '(10)', p: 7850 },
+];
+const revealed = new Set(['input']); let paramsRevealed = false;
+function drawLadder() {
+  const t = $('#ladder'); t.innerHTML = '<tr><th>Layer</th><th>Output shape</th><th style="text-align:right">Params</th></tr>';
+  for (const r of LADDER) {
+    const show = revealed.has(r.k) || (r.auto && revealed.has(r.k === 'relu1' ? 'conv1' : 'conv2'));
+    const pShow = paramsRevealed || r.p === 0 || (r.k === 'conv1' && revealed.has('c1p'));
+    t.append(h('tr', {}, h('td', {}, r.name), h('td', { class: 's ' + (show ? 'c-blue' : 'hid') }, show ? r.shape : '?'), h('td', { class: 'p ' + (pShow ? 'c-purple' : 'hid') }, pShow ? (r.p ? fmtInt(r.p) : '0') : '?')));
+  }
+  if (paramsRevealed) t.append(h('tr', {}, h('td', {}, h('b', {}, 'Total')), h('td'), h('td', { class: 'p c-purple' }, h('b', {}, '10,330'))));
+}
+function initShapes(verify) {
+  drawLadder();
+  const v = verify; const a = v.actual, pc = v.params;
+  $('#verified').innerHTML = `<span class="c-green">✓ Verified in code:</span> this page ran a forward pass of the exact model and got conv1 (${a.conv1.join(', ')}), pool1 (${a.pool1.join(', ')}), conv2 (${a.conv2.join(', ')}), pool2 (${a.pool2.join(', ')}), flatten (${a.flat}), logits (${a.logits}), with ${fmtInt(pc.conv1)} + ${fmtInt(pc.conv2)} + ${fmtInt(pc.linear)} = ${fmtInt(pc.total)} parameters. Any mismatch would show a red banner at the top.`;
+  const Qs = [
+    { k: 'conv1', q: 'Input (1, 28, 28) → <b>Conv2d(1→16, 3×3, padding=1)</b>. Output shape?', opts: [['(1, 28, 28)', 0, 'The channel count changes: each of the 16 filters makes its own feature map.'], ['(16, 26, 26)', 0, 'That would be without padding (28 − 3 + 1 = 26). padding=1 adds a zero border, so it stays 28.'], ['(16, 28, 28)', 1, '16 filters → 16 channels, and padding=1 keeps 28×28.'], ['(16, 14, 14)', 0, 'Halving happens in the pool, not the conv.']] },
+    { k: 'pool1', q: '(16, 28, 28) → ReLU (shape unchanged) → <b>MaxPool(2)</b>. Output?', opts: [['(16, 28, 28)', 0, 'Pooling keeps 1 of every 2×2 block, so height and width halve.'], ['(8, 28, 28)', 0, 'Pooling works inside each channel separately; the channel count stays 16.'], ['(16, 14, 14)', 1, 'Each channel halves: 28 → 14. Channels stay 16.'], ['(16, 7, 7)', 0, 'That comes after the second pool.']] },
+    { k: 'conv2', q: '(16, 14, 14) → <b>Conv2d(16→16, 3×3, padding=1)</b>. Output?', opts: [['(256, 14, 14)', 0, 'Each filter looks at all 16 input channels at once and sums them into one map, so 16 filters → 16 maps, not 16 × 16.'], ['(16, 14, 14)', 1, '16 filters, each 16×3×3, give 16 maps. padding=1 keeps 14×14.'], ['(16, 12, 12)', 0, 'Padding keeps the size: 14 + 2 − 3 + 1 = 14.'], ['(32, 14, 14)', 0, 'Output channels = number of filters = 16.']] },
+    { k: 'pool2', q: '→ ReLU → <b>MaxPool(2)</b> again. Output?', opts: [['(16, 7, 7)', 1, '14 → 7. This is the last spatial shape.'], ['(16, 14, 14)', 0, 'Pooling halves height and width.'], ['(8, 7, 7)', 0, 'Channels stay 16.'], ['(16, 3, 3)', 0, 'Only one halving here: 14 → 7.']] },
+    { k: 'flat', q: '<b>Flatten</b> (16, 7, 7) into one row. How long is it?', opts: [['49', 0, '49 is one channel (7×7). All 16 channels go in the row.'], ['112', 0, '16 × 7 = 112 forgets the second 7.'], ['784', 1, '16 × 7 × 7 = 784. (Coincidence: also 28 × 28!)'], ['16', 0, 'Flatten keeps every number; it doesn\'t squash each map to one value.']] },
+    { k: 'logits', q: '<b>Linear(784→10)</b>. Output?', opts: [['(10)', 1, 'One score per class.'], ['(784)', 0, 'A linear layer maps 784 inputs to however many outputs you ask for: 10 here.'], ['(1)', 0, 'You get one score per class, not a single answer. Argmax picks the winner later.'], ['(7840)', 0, '7,840 is the number of weights, not outputs.']] },
+  ];
+  const box = $('#shapeQs');
+  for (const q of Qs) {
+    const d = h('div', { class: 'predict' }); box.append(d);
+    mcq(d, { mode: 'predict', q: q.q, opts: q.opts.map(([t, ok, why]) => ({ t, ok: !!ok, why })), after: () => { revealed.add(q.k); drawLadder(); } });
+  }
+  $('#pcbtn').onclick = () => {
+    const g = parseInt($('#pcin').value, 10); const fb = $('#pcfb');
+    const right = g === 160, close = Math.abs(g - 160) <= 20;
+    let lead = isNaN(g) ? 'No guess? Fine. Here it is:' : right ? '<b class="c-green">✓ Exactly.</b>' : g === 144 ? '<b class="c-yellow">So close.</b> You counted the weights but forgot the 16 biases.' : close ? '<b class="c-yellow">Close.</b>' : '<b class="c-red">Not quite.</b>';
+    fb.innerHTML = `<div class="fb ${right ? 'ok' : 'no'}">${lead}<br>Each filter: 1 channel × 3 × 3 = <b class="c-purple">9 weights</b> + <b class="c-purple">1 bias</b> = 10.<br>16 filters × 10 = <b class="c-purple">160</b>.<br>Same idea for conv2: 16 × (16 × 3 × 3 + 1) = <b class="c-purple">2,320</b>. Linear: 784 × 10 + 10 = <b class="c-purple">7,850</b>.</div>`;
+    revealed.add('c1p'); drawLadder();
+  };
+  mcq($('#mostQ'), { mode: 'predict', q: 'Which layer holds the most parameters?', opts: [
+    { t: 'conv1', why: 'conv1 is the smallest: just 160.' },
+    { t: 'conv2', why: 'conv2 has 2,320, a lot more than conv1, but not the most.' },
+    { t: 'the linear layer', ok: true, why: '7,850 of 10,330, about 76%. The bars show it.' },
+    { t: 'about equal', why: 'They\'re far from equal; see the bars.' }],
+    after: () => { paramsRevealed = true; drawLadder(); showBars(); } });
+  const bars = $('#bars');
+  for (const [n, v] of [['conv1', 160], ['conv2', 2320], ['linear', 7850]]) bars.append(h('div', { class: 'br' }, h('span', {}, n), h('div', { class: 'tr' }, h('div', { class: 'fill', 'data-v': v })), h('span', { class: 'v' }, '?')));
+  // weight sharing picture
+  const c = setupCanvas($('#sharecv'), 320, 150); drawShare(c);
+  const big = 784 * (16 * 28 * 28) + 16 * 28 * 28;
+  $('#nocnn').innerHTML = `Thought experiment: if conv1 were a linear layer from 784 pixels to the same 16 × 28 × 28 = 12,544 outputs, it would need 784 × 12,544 + 12,544 = <b class="c-purple">${fmtInt(big)}</b> parameters instead of 160.`;
+}
+function showBars() {
+  const tot = 10330;
+  $$('#bars .br').forEach(r => { const f = $('.fill', r), v = +f.dataset.v; requestAnimationFrame(() => f.style.width = (v / 7850 * 100) + '%'); $('.v', r).textContent = fmtInt(v) + ' · ' + (v / tot * 100).toFixed(1) + '%'; });
+  $('#pbnote').innerHTML = 'Bars are to scale. The linear layer holds about three quarters of the model.';
+}
+function drawShare(c) {
+  c.fillStyle = '#141821'; c.fillRect(0, 0, 320, 150);
+  c.font = '11px sans-serif'; c.fillStyle = '#98a2b3'; c.textAlign = 'center';
+  c.fillText('conv: same 9 weights everywhere', 78, 12); c.fillText('linear: every input → every output', 240, 12);
+  const s = 12, ox = 18, oy = 22;
+  for (let y = 0; y < 10; y++) for (let x = 0; x < 10; x++) { c.fillStyle = '#1b202b'; c.fillRect(ox + x * s, oy + y * s, s - 1, s - 1); }
+  for (const [px, py] of [[0, 0], [5, 1], [2, 6], [7, 6]]) { c.fillStyle = 'rgba(180,142,240,.55)'; c.fillRect(ox + px * s, oy + py * s, 3 * s - 1, 3 * s - 1); c.strokeStyle = '#b48ef0'; c.lineWidth = 1.5; c.strokeRect(ox + px * s + .5, oy + py * s + .5, 3 * s - 2, 3 * s - 2); }
+  c.fillStyle = '#b48ef0'; c.fillText('one filter, reused', 78, 146);
+  const ix = 190, ox2 = 292; const ins = 14, outs = 10;
+  c.strokeStyle = 'rgba(180,142,240,.22)'; c.lineWidth = .6;
+  for (let i = 0; i < ins; i++) for (let j = 0; j < outs; j++) { c.beginPath(); c.moveTo(ix, 24 + i * 8.5); c.lineTo(ox2, 34 + j * 9.5); c.stroke(); }
+  for (let i = 0; i < ins; i++) { c.fillStyle = '#58c4dd'; c.beginPath(); c.arc(ix, 24 + i * 8.5, 2.5, 0, 7); c.fill(); }
+  for (let j = 0; j < outs; j++) { c.fillStyle = '#ffd23f'; c.beginPath(); c.arc(ox2, 34 + j * 9.5, 3, 0, 7); c.fill(); }
+  c.fillStyle = '#58c4dd'; c.fillText('784 in', ix, 146); c.fillStyle = '#ffd23f'; c.fillText('10 out', ox2 - 6, 146);
+  c.fillStyle = '#b48ef0'; c.fillText('7,840 lines', 241, 146);
+}
+
+/* =====================================================================
+   §6 Flatten + linear
+   ===================================================================== */
+let flC, wsC, FWD = null, flT = 0, flCancel = null, selClass = 0, wsK = 784, wsCancel = null;
+function recomputeFwd() { FWD = forward(IMG, curW()); drawFlat(); drawWs(); drawLogits(); }
+function drawFlat() {
+  const c = flC, p = FWD.p2.d, m = maxAbs(p);
+  c.fillStyle = '#141821'; c.fillRect(0, 0, 320, 240);
+  c.font = '11px sans-serif'; c.fillStyle = '#98a2b3'; c.textAlign = 'left';
+  c.fillText('16 maps × 7 × 7  (after block 2)', 4, 11);
+  c.fillText('→ one row of 784 numbers (line k = channel k)', 4, 110);
+  c.textAlign = 'right'; c.fillText('0', 11, 125); c.fillText('783', 318, 239);
+  for (let k = 0; k < 16; k++) { const mx = 4 + (k % 8) * 40, my = 18 + (k / 8 | 0) * 40; c.strokeStyle = '#2a3140'; c.lineWidth = 1; c.strokeRect(mx - .5, my - .5, 29, 29); }
+  c.strokeStyle = '#2a3140'; c.strokeRect(12.5, 117.5, 295, 113);
+  const t = flT;
+  for (let k = 0; k < 16; k++) for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+    const i = k * 49 + y * 7 + x;
+    const sx = 4 + (k % 8) * 40 + x * 4, sy = 18 + (k / 8 | 0) * 40 + y * 4;
+    const ex = 13 + (y * 7 + x) * 6, ey = 118 + k * 7;
+    const delay = k / 16 * .55 + y / 7 * .06, lt = ease(clamp((t - delay) / .35, 0, 1));
+    const px = lerp(sx, ex, lt), py = lerp(sy, ey, lt), sz = lerp(4, 6, lt);
+    c.fillStyle = divCol(p[i], m); c.fillRect(px, py, sz - (lt > .5 ? 0 : .3), lt > .5 ? 6 : sz);
+  }
+}
+function drawWs() {
+  const c = wsC, x = FWD.flat.d, W = curW(), w = W.fw.subarray(selClass * 784, selClass * 784 + 784);
+  c.fillStyle = '#141821'; c.fillRect(0, 0, 320, 318);
+  const mx = maxAbs(x), mw = maxAbs(w); const prod = new Float32Array(784); for (let i = 0; i < 784; i++) prod[i] = x[i] * w[i]; const mp = maxAbs(prod);
+  const strip = (oy, arr, m, n, label, col) => {
+    c.font = '11px sans-serif'; c.fillStyle = col; c.textAlign = 'left'; c.fillText(label, 13, oy - 5);
+    for (let i = 0; i < n; i++) { c.fillStyle = divCol(arr[i], m); c.fillRect(13 + (i % 49) * 6, oy + (i / 49 | 0) * 5, 6, 5); }
+    c.strokeStyle = '#2a3140'; c.lineWidth = 1; c.strokeRect(12.5, oy - .5, 295, 81);
+  };
+  strip(16, x, mx, 784, 'x: the 784 flattened values', '#58c4dd');
+  strip(120, w, mw, 784, `w: 784 weights for "${CLASSES[selClass]}"`, '#b48ef0');
+  strip(224, prod, mp, wsK, 'x × w: 784 products', '#e7eaf0');
+  if (wsK < 784) { const i = wsK; c.strokeStyle = '#ffd23f'; c.lineWidth = 1.5; c.strokeRect(13 + (i % 49) * 6 - .5, 224 + (i / 49 | 0) * 5 - .5, 7, 6); }
+  let s = 0; for (let i = 0; i < wsK; i++) s += prod[i];
+  const b = W.fb[selClass], L = FWD.logits.d[selClass];
+  const terms = [0, 1, 2].map(i => `(${sfmt(x[i])}×${sfmt(w[i])})`).join(' + ');
+  $('#wseq').innerHTML = `logit = ${terms} + … + (784th) + b`;
+  $('#wsum').innerHTML = wsK < 784 ? `adding product ${wsK} of 784 … running total <b>${fmt(s, 2)}</b>` : `Σ 784 products = ${fmt(s, 3)}, + bias ${fmt(b, 3)}<br>= logit <b class="${L >= 0 ? 'c-blue' : 'c-red'}">${fmt(L, 3)}</b> for ${CLASSES[selClass]}`;
+}
+function drawLogits() {
+  const box = $('#logits'), L = FWD.logits.d; const m = Math.max(maxAbs(L), 1);
+  if (!box.children.length) for (let i = 0; i < 10; i++) { const r = h('div', { class: 'lr' }, h('span', { class: 'nm' }), h('div', { class: 'track' }, h('i', { class: 'zero' }), h('i', { class: 'bar' })), h('span', { class: 'val' })); r.onclick = () => { selClass = i; wsK = 784; if (wsCancel) wsCancel(); drawWs(); drawLogits(); }; box.append(r); }
+  let top = 0; for (let i = 1; i < 10; i++) if (L[i] > L[top]) top = i;
+  [...box.children].forEach((r, i) => {
+    r.classList.toggle('sel', i === selClass);
+    $('.nm', r).innerHTML = (i === top ? '<span class="c-yellow">★</span> ' : '') + CLASSES[i];
+    const z = 50, wv = Math.abs(L[i]) / m * 50, bar = $('.bar', r);
+    $('.zero', r).style.left = z + '%';
+    bar.style.left = (L[i] >= 0 ? z : z - wv) + '%'; bar.style.width = wv + '%'; bar.style.background = L[i] >= 0 ? 'var(--blue)' : 'var(--red)';
+    if (i === top) bar.style.boxShadow = '0 0 0 1.5px var(--yellow)'; else bar.style.boxShadow = 'none';
+    $('.val', r).textContent = fmt(L[i], 2);
+  });
+  const real = curW().real;
+  $('#pred').innerHTML = `Highest score: <b class="c-yellow">${CLASSES[top]}</b>. ` + (real ? 'These are your trained model\'s real logits for your drawing. Hand drawings look different from real photos, so odd answers are normal.' : 'These weights are hand-built templates, one per preset shape, so the presets mostly score right. They are not trained. Load your weights in §1 for real predictions.');
+}
+function initFlat() {
+  flC = setupCanvas($('#flcv'), 320, 240); wsC = setupCanvas($('#wscv'), 320, 318);
+  $('#unroll').onclick = () => { if (flCancel) flCancel(); flT = 0; flCancel = tween(2800, t => { flT = t; drawFlat(); }); };
+  $('#addup').onclick = () => { if (wsCancel) wsCancel(); wsK = 0; wsCancel = tween(2600, t => { wsK = Math.round(784 * t); drawWs(); }); };
+  imgListeners.push(() => { recomputeFwd(); });
+  recomputeFwd();
+}
+
+/* =====================================================================
+   §7 Loss
+   ===================================================================== */
+let lgC, prC, lnC; const L7 = new Float64Array(10); let trueLbl = 0, dragI = -1;
+const LMIN = -4, LMAX = 8;
+function softmax(z) { let m = -Infinity; for (const v of z) if (v > m) m = v; const e = Array.from(z, v => Math.exp(v - m)); const s = e.reduce((a, b) => a + b, 0); return e.map(v => v / s); }
+const ly = v => 14 + (LMAX - v) / (LMAX - LMIN) * 170;
+function drawLoss() {
+  const c = lgC; c.fillStyle = '#141821'; c.fillRect(0, 0, 320, 210);
+  c.font = '10px sans-serif'; c.textAlign = 'center';
+  const z0 = ly(0);
+  c.strokeStyle = '#3a4252'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, z0 + .5); c.lineTo(320, z0 + .5); c.stroke();
+  for (let i = 0; i < 10; i++) {
+    const cx = 16 + i * 32, v = L7[i];
+    if (i === trueLbl) { c.fillStyle = 'rgba(131,193,103,.1)'; c.fillRect(cx - 15, 6, 30, 190); }
+    c.fillStyle = v >= 0 ? '#58c4dd' : '#fc6255'; const y = ly(v); c.fillRect(cx - 9, Math.min(y, z0), 18, Math.abs(y - z0) || 1);
+    c.fillStyle = dragI === i ? '#ffd23f' : '#e7eaf0'; c.beginPath(); c.arc(cx, y, dragI === i ? 7 : 5, 0, 7); c.fill();
+    c.fillStyle = '#e7eaf0'; c.fillText(fmt(v, 1), cx, v >= 0 ? y - 9 : y + 17);
+    c.fillStyle = i === trueLbl ? '#83c167' : '#98a2b3'; c.fillText(SHORT[i], cx, 205);
+  }
+  c.textAlign = 'left'; c.fillStyle = '#98a2b3'; c.fillText('0', 2, z0 - 3);
+  const p = softmax(L7);
+  const d = prC; d.fillStyle = '#141821'; d.fillRect(0, 0, 320, 140); d.font = '10px sans-serif'; d.textAlign = 'center';
+  d.strokeStyle = '#3a4252'; d.beginPath(); d.moveTo(0, 120.5); d.lineTo(320, 120.5); d.stroke();
+  for (let i = 0; i < 10; i++) {
+    const cx = 16 + i * 32, hh = p[i] * 100; d.fillStyle = i === trueLbl ? '#83c167' : '#4a6f95'; d.fillRect(cx - 9, 120 - hh, 18, hh);
+    d.fillStyle = i === trueLbl ? '#83c167' : '#c8ced8'; d.fillText(p[i] < .995 ? (p[i] * 100).toFixed(p[i] < .1 ? 1 : 0) + '%' : '100%', cx, 114 - hh);
+    d.fillStyle = i === trueLbl ? '#83c167' : '#98a2b3'; d.fillText(SHORT[i], cx, 134);
+  }
+  const pt = p[trueLbl], loss = -Math.log(pt);
+  $('#lossout').innerHTML = `loss = −ln(p[<span class="c-green">${CLASSES[trueLbl]}</span>]) = −ln(${pt < .001 ? pt.toExponential(1) : fmt(pt, 3)})<br><span class="L">${fmt(loss, 3)}</span>`;
+  // -ln p curve
+  const e = lnC; e.fillStyle = '#141821'; e.fillRect(0, 0, 320, 140);
+  const X = q => 30 + q * 280, Y = l => 120 - Math.min(l, 5) / 5 * 108;
+  e.strokeStyle = '#3a4252'; e.beginPath(); e.moveTo(30, 120.5); e.lineTo(310, 120.5); e.moveTo(30.5, 10); e.lineTo(30.5, 120); e.stroke();
+  e.font = '10px sans-serif'; e.fillStyle = '#98a2b3'; e.textAlign = 'center';
+  for (const q of [0, .1, .5, 1]) e.fillText(String(q), X(q), 133);
+  e.textAlign = 'right'; for (const l of [0, 2.3, 5]) e.fillText(String(l), 26, Y(l) + 3);
+  e.textAlign = 'left'; e.fillText('loss = −ln(p of true class)', 40, 14);
+  e.strokeStyle = '#ff9f43'; e.lineWidth = 2; e.beginPath(); for (let k = 1; k <= 200; k++) { const q = k / 200, l = -Math.log(q); k === 1 ? e.moveTo(X(q), Y(l)) : e.lineTo(X(q), Y(l)); } e.stroke();
+  e.setLineDash([3, 3]); e.strokeStyle = '#566'; e.lineWidth = 1; e.beginPath(); e.moveTo(X(.1), 120); e.lineTo(X(.1), Y(Math.log(10))); e.lineTo(30, Y(Math.log(10))); e.stroke(); e.setLineDash([]);
+  e.fillStyle = '#ffd23f'; e.beginPath(); e.arc(X(pt), Y(loss), 5, 0, 7); e.fill();
+}
+function initLoss() {
+  mcq($('#uniQ'), { mode: 'predict', q: 'A brand-new model guesses <b>uniformly</b>: probability 1/10 for every class. What is its loss?', opts: [
+    { t: '0', why: '0 needs probability 1 on the true class. Here it\'s only 0.1.' },
+    { t: '1', why: 'Close in spirit, but −ln(0.1) is bigger than 1.' },
+    { t: '≈ 2.30', ok: true, why: '−ln(1/10) = ln 10 ≈ 2.303. That is the loss you should see at the very start of training, a handy sanity check (§9).' },
+    { t: '10', why: 'The loss isn\'t the number of classes; it\'s −ln of a probability: −ln(0.1) ≈ 2.30.' }] });
+  lgC = setupCanvas($('#lgcv'), 320, 210); prC = setupCanvas($('#prcv'), 320, 140); lnC = setupCanvas($('#lncv'), 320, 140);
+  const cv = $('#lgcv');
+  const setFrom = e => { const p = evPos(cv, e); L7[dragI] = clamp(LMAX - (p[1] - 14) / 170 * (LMAX - LMIN), LMIN, LMAX); drawLoss(); };
+  cv.addEventListener('pointerdown', e => { const p = evPos(cv, e); dragI = clamp(Math.floor(p[0] / 32), 0, 9); cv.setPointerCapture(e.pointerId); setFrom(e); e.preventDefault(); });
+  cv.addEventListener('pointermove', e => { if (dragI >= 0) { setFrom(e); e.preventDefault(); } });
+  const up = () => { dragI = -1; drawLoss(); }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  const tc = $('#tchips'); SHORT.forEach((n, i) => { const c = h('button', { class: 'chip' + (i === trueLbl ? ' sel' : '') }, CLASSES[i]); c.onclick = () => { trueLbl = i; $$('#tchips .chip').forEach((x, j) => x.classList.toggle('sel', j === i)); drawLoss(); }; tc.append(c); });
+  const anim = target => { const from = Array.from(L7); tween(500, t => { for (let i = 0; i < 10; i++) L7[i] = lerp(from[i], target[i], ease(t)); drawLoss(); }); };
+  $('#lzero').onclick = () => anim(Array(10).fill(0));
+  $('#l6').onclick = () => anim(Array.from(FWD.logits.d, v => clamp(v, LMIN, LMAX)));
+  $('#lright').onclick = () => anim(Array.from({ length: 10 }, (_, i) => i === trueLbl ? 6 : -1));
+  $('#lwrong').onclick = () => anim(Array.from({ length: 10 }, (_, i) => i === (trueLbl + 6) % 10 ? 6 : i === trueLbl ? -2 : -1));
+  drawLoss();
+}
+
+/* =====================================================================
+   §8 Backprop vs optimizer
+   ===================================================================== */
+const TH = .5, CS = Math.cos(TH), SN = Math.sin(TH);
+const lossF = (x, y) => { const a = CS * x + SN * y, b = -SN * x + CS * y; return 1.5 * a * a + .15 * b * b; };
+const gradF = (x, y) => { const a = CS * x + SN * y, b = -SN * x + CS * y, ga = 3 * a, gb = .3 * b; return [ga * CS - gb * SN, ga * SN + gb * CS]; };
+const S8 = { w: [-2.3, 1.9], start: [-2.3, 1.9], grad: null, stale: false, lr: .3, hist: [], trail: [], moving: null, auto: false, diverged: false };
+let sfC, slC, gdC, surfImg = null, gridSeed = 1, gridLit = 0;
+const sx = x => (x + 3) / 6 * 300, sy = y => (3 - y) / 6 * 300;
+function buildSurface() {
+  const n = 300, cv = document.createElement('canvas'); cv.width = cv.height = n * DPR; const c = cv.getContext('2d'); const id = c.createImageData(n * DPR, n * DPR);
+  const N = n * DPR, Lmax = lossF(3, 3) + lossF(3, -3);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const x = i / N * 6 - 3, y = 3 - j / N * 6, L = lossF(x, y), t = Math.log1p(L) / Math.log1p(Lmax);
+    const lvl = Math.sqrt(L) * 3.2, frac = lvl - Math.floor(lvl), line = frac < .045 ? .35 : 0;
+    const r = lerp(10, 74, t) + line * 140, g = lerp(30, 111, t) + line * 140, b = lerp(60, 149, t) + line * 120;
+    id.data.set([r, g, b, 255], (j * N + i) * 4);
+  }
+  c.putImageData(id, 0, 0); surfImg = cv;
+}
+function arrow(c, x1, y1, x2, y2, col, w, dash) {
+  c.strokeStyle = col; c.fillStyle = col; c.lineWidth = w; c.setLineDash(dash || []); c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.setLineDash([]);
+  const a = Math.atan2(y2 - y1, x2 - x1), L = 8; c.beginPath(); c.moveTo(x2, y2); c.lineTo(x2 - L * Math.cos(a - .4), y2 - L * Math.sin(a - .4)); c.lineTo(x2 - L * Math.cos(a + .4), y2 - L * Math.sin(a + .4)); c.closePath(); c.fill();
+}
+function drawSurf() {
+  const c = sfC; c.drawImage(surfImg, 0, 0, 300, 300);
+  c.fillStyle = 'rgba(255,255,255,.7)'; c.font = '10px sans-serif'; c.textAlign = 'left'; c.fillText('w₁ →', 266, 294); c.fillText('↑ w₂', 4, 12);
+  c.fillStyle = '#83c167'; c.beginPath(); c.arc(sx(0), sy(0), 3, 0, 7); c.fill(); c.fillText('lowest loss', sx(0) + 6, sy(0) - 4);
+  if (S8.trail.length > 1) { c.strokeStyle = 'rgba(255,210,63,.55)'; c.lineWidth = 1.5; c.beginPath(); S8.trail.forEach(([x, y], i) => i ? c.lineTo(sx(x), sy(y)) : c.moveTo(sx(x), sy(y))); c.stroke(); }
+  const [x, y] = S8.w; const bx = sx(x), by = sy(y);
+  if (S8.grad && !S8.stale) {
+    const [gx, gy] = S8.grad, gl = Math.hypot(gx, gy) || 1, sc = Math.min(60, gl * 14) / gl;
+    arrow(c, bx, by, bx + gx * sc, by - gy * sc, '#ff9f43', 2.5);
+    const dx = -S8.lr * gx, dy = -S8.lr * gy; arrow(c, bx, by, sx(x + dx), sy(y + dy), '#58c4dd', 2, [4, 3]);
+  }
+  const g = c.createRadialGradient(bx - 2, by - 2, 1, bx, by, 8); g.addColorStop(0, '#fff6c8'); g.addColorStop(1, '#ffd23f');
+  c.fillStyle = g; c.beginPath(); c.arc(bx, by, 7, 0, 7); c.fill(); c.strokeStyle = '#000'; c.lineWidth = 1; c.stroke();
+  // table
+  const L = lossF(x, y), gr = S8.grad;
+  const gtxt = i => gr && !S8.stale ? `<span class="c-orange">${fmt(gr[i], 2)}</span>` : '<span class="muted">—</span>';
+  $('#wtab').innerHTML = `<span class="h"></span><span class="h">weight</span><span class="h">gradient</span>
+    <span>w₁</span><span>${fmt(x, 3)}</span>${gtxt(0)}<span>w₂</span><span>${fmt(y, 3)}</span>${gtxt(1)}
+    <span>loss</span><span class="c-orange">${fmt(L, 3)}</span><span class="muted">step ${S8.hist.length - 1}</span>`;
+  // loss chart
+  const d = slC; d.fillStyle = '#141821'; d.fillRect(0, 0, 320, 90); d.strokeStyle = '#3a4252'; d.lineWidth = 1; d.beginPath(); d.moveTo(30, 78.5); d.lineTo(316, 78.5); d.stroke();
+  d.font = '10px sans-serif'; d.fillStyle = '#98a2b3'; d.textAlign = 'left'; d.fillText('loss per step', 34, 10);
+  const H = S8.hist, M = Math.max(H[0] || 1, 1), n = Math.max(H.length - 1, 40);
+  d.strokeStyle = '#ff9f43'; d.lineWidth = 1.8; d.beginPath(); H.forEach((v, i) => { const X = 30 + i / n * 286, Y = 78 - Math.min(v / M, 1.15) * 62; i ? d.lineTo(X, Y) : d.moveTo(X, Y); }); d.stroke();
+}
+function drawGrid() {
+  const c = gdC; c.fillStyle = '#141821'; c.fillRect(0, 0, 320, 150);
+  const rnd = mulberry32(gridSeed); const per = 160, cs = 2;
+  const seg = [[0, 160, '#b48ef0'], [160, 2480, '#9b7fd4'], [2480, 10330, '#7d68b0']];
+  for (let i = 0; i < 10330; i++) {
+    const x = (i % per) * cs, y = 18 + (i / per | 0) * cs; let col = i < 160 ? '#6b5a8f' : i < 2480 ? '#4f4470' : '#3a3352';
+    if (gridLit) { const g = Math.pow(rnd(), 3) * gridLit; col = mix([40, 34, 60], COL.orange, g); }
+    c.fillStyle = col; c.fillRect(x, y, cs - .3, cs - .3);
+  }
+  c.font = '10px sans-serif'; c.textAlign = 'left'; c.fillStyle = '#b48ef0'; c.fillText('conv1 160 · conv2 2,320 · linear 7,850', 0, 11);
+  void seg;
+}
+function doBackward() {
+  if (S8.moving) return; S8.grad = gradF(...S8.w); S8.stale = false; $('#stp').disabled = false;
+  gridSeed++; tween(500, t => { gridLit = t; drawGrid(); });
+  $('#gridmsg').innerHTML = 'Every one of the 10,330 dots now holds a gradient (brighter = bigger). <b>No weight has changed yet.</b> <span class="illus">gradient sizes illustrative</span>';
+  $('#smsg').innerHTML = '<span class="c-orange">Orange arrow</span> = gradient (uphill). <span class="c-blue">Dashed</span> = the step the optimizer would take (−lr × gradient). Nothing has moved.';
+  drawSurf();
+}
+function doStep(cb) {
+  if (!S8.grad || S8.stale || S8.moving) return;
+  const [x, y] = S8.w, [gx, gy] = S8.grad, nx = x - S8.lr * gx, ny = y - S8.lr * gy;
+  $('#smsg').innerHTML = `w₁ ← ${fmt(x, 2)} − ${fmt(S8.lr, 3)} × ${fmt(gx, 2)} = <b>${fmt(nx, 2)}</b>`;
+  S8.moving = true; $('#stp').disabled = true;
+  tween(S8.auto ? 220 : 450, t => { const e = ease(t); S8.w = [lerp(x, nx, e), lerp(y, ny, e)]; drawSurf(); }, () => {
+    S8.moving = false; S8.w = [nx, ny]; S8.stale = true; S8.trail.push([nx, ny]); S8.hist.push(lossF(nx, ny));
+    tween(400, t => { gridLit = 1 - t; drawGrid(); });
+    $('#gridmsg').innerHTML = 'The optimizer moved every weight a little. The gradients are now used up; call backward() again at the new spot. <span class="illus">illustrative</span>';
+    if (Math.abs(nx) > 6 || Math.abs(ny) > 6) { S8.diverged = true; S8.auto = false; $('#smsg').innerHTML = '<b class="c-red">💥 Diverged.</b> Each step overshot further than the last. Learning rate too big. Reset and lower it.'; $('#bwd').disabled = true; }
+    drawSurf(); cb && cb();
+  });
+}
+function resetBall() { S8.auto = false; S8.w = S8.start.slice(); S8.grad = null; S8.stale = false; S8.trail = [S8.w.slice()]; S8.hist = [lossF(...S8.w)]; S8.diverged = false; $('#bwd').disabled = false; $('#stp').disabled = true; $('#auto').textContent = '▶ Auto ×40'; $('#smsg').textContent = 'Press ① to compute the gradient at the ball.'; gridLit = 0; drawGrid(); drawSurf(); }
+function setLr(v) { S8.lr = v; $('#lr').value = Math.round(Math.log(v / .005) / Math.log(.8 / .005) * 1000); $('#lrout').textContent = v.toFixed(3); $$('[data-lr]').forEach(c => c.classList.toggle('sel', +c.dataset.lr === v)); drawSurf(); }
+function initOpt() {
+  sfC = setupCanvas($('#surf'), 300, 300); slC = setupCanvas($('#slcv'), 320, 90); gdC = setupCanvas($('#gridcv'), 320, 150);
+  buildSurface();
+  $('#bwd').onclick = doBackward; $('#stp').onclick = () => doStep();
+  $('#lr').oninput = e => { const v = .005 * Math.pow(.8 / .005, e.target.value / 1000); S8.lr = v; $('#lrout').textContent = v.toFixed(3); $$('[data-lr]').forEach(c => c.classList.remove('sel')); drawSurf(); };
+  $$('[data-lr]').forEach(c => c.onclick = () => { resetBall(); setLr(+c.dataset.lr); });
+  $('#sreset').onclick = resetBall;
+  $('#surf').addEventListener('pointerdown', e => { if (S8.moving) return; const p = evPos($('#surf'), e); S8.start = [p[0] / 300 * 6 - 3, 3 - p[1] / 300 * 6]; resetBall(); });
+  $('#auto').onclick = () => {
+    if (S8.auto) { S8.auto = false; $('#auto').textContent = '▶ Auto ×40'; return; }
+    if (S8.diverged) resetBall(); S8.auto = true; $('#auto').textContent = '⏸ Stop'; let n = 0;
+    const loop = () => { if (!S8.auto || n >= 40 || S8.diverged) { S8.auto = false; $('#auto').textContent = '▶ Auto ×40'; return; } n++; doBackward(); setTimeout(() => doStep(() => setTimeout(loop, 60)), 200); };
+    loop();
+  };
+  setLr(.3); resetBall();
+}
+
+/* =====================================================================
+   §9 Training loop
+   ===================================================================== */
+const STEPS_PER_EPOCH = Math.ceil(60000 / 64); // 938
+const LOOP = { E: 5, step: 0, losses: [], mode: 'idle', raf: null, stage: -1, timer: null };
+const CODE = [
+  ['for epoch in range(EPOCHS):', '# outer'],
+  ['  for x, y in train_loader:', '# inner'],
+  ['    logits = model(x)', '# forward'],
+  ['    loss = loss_fn(logits, y)', '# loss'],
+  ['    optimizer.zero_grad()', '# clear'],
+  ['    loss.backward()', '# backprop'],
+  ['    optimizer.step()', '# update'],
+];
+const FLOWP = ['(64,1,28,28)', '(64,16,28,28)', '(64,16,14,14)', '(64,16,7,7)', '(64,784)', '(64,10)', 'loss'];
+let lcC; const lrnd = mulberry32(42); const SIM = [];
+function gauss(r) { return Math.sqrt(-2 * Math.log(r() + 1e-9)) * Math.cos(2 * Math.PI * r()); }
+function simLoss(s) {
+  while (SIM.length <= s) { const t = SIM.length; const base = .28 + 1.77 * Math.exp(-t / 180) + .25 * Math.exp(-t / 1500); SIM.push(Math.max(.03, base * (1 + .2 * gauss(lrnd)))); }
+  return SIM[s];
+}
+function drawLoop() {
+  const total = LOOP.E * STEPS_PER_EPOCH, s = LOOP.step;
+  const ep = Math.min(LOOP.E, Math.floor(s / STEPS_PER_EPOCH) + (s >= total ? 0 : 1)), b = s >= total ? STEPS_PER_EPOCH : s % STEPS_PER_EPOCH;
+  $('#cep').textContent = `${Math.max(1, ep)}/${LOOP.E}`; $('#cbt').textContent = `${b}/${STEPS_PER_EPOCH}`;
+  const imgs = Math.floor(s / STEPS_PER_EPOCH) * 60000 + (s % STEPS_PER_EPOCH) * 64 - (s % STEPS_PER_EPOCH === 0 ? 0 : 0);
+  $('#cim').textContent = fmtInt(s >= total ? LOOP.E * 60000 : imgs);
+  $('#pgE').style.width = (s / total * 100) + '%'; $('#pgB').style.width = (b / STEPS_PER_EPOCH * 100) + '%';
+  const c = lcC; c.fillStyle = '#141821'; c.fillRect(0, 0, 320, 170);
+  const X = i => 32 + i / total * 282, Y = v => 150 - v / 2.6 * 138;
+  c.strokeStyle = '#3a4252'; c.lineWidth = 1; c.beginPath(); c.moveTo(32, 150.5); c.lineTo(316, 150.5); c.moveTo(32.5, 8); c.lineTo(32.5, 150); c.stroke();
+  c.font = '10px sans-serif'; c.fillStyle = '#98a2b3'; c.textAlign = 'right'; for (const v of [0, 1, 2.3]) c.fillText(String(v), 28, Y(v) + 3);
+  c.textAlign = 'center';
+  c.setLineDash([3, 3]); for (let e = 1; e <= LOOP.E; e++) { const x = X(e * STEPS_PER_EPOCH); c.strokeStyle = '#2a3140'; c.beginPath(); c.moveTo(x, 8); c.lineTo(x, 150); c.stroke(); c.fillText('ep ' + e, X((e - .5) * STEPS_PER_EPOCH), 164); } c.setLineDash([]);
+  c.save(); c.translate(10, 79); c.rotate(-Math.PI / 2); c.fillText('loss', 0, 0); c.restore();
+  c.fillStyle = 'rgba(255,159,67,.85)'; c.textAlign = 'right'; c.fillText('SIMULATED', 312, 18);
+  if (s > 0) {
+    c.strokeStyle = 'rgba(255,159,67,.3)'; c.lineWidth = 1; c.beginPath(); for (let i = 0; i < s; i++) { const v = simLoss(i); i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v)); } c.stroke();
+    c.strokeStyle = '#ff9f43'; c.lineWidth = 2.2; c.beginPath(); let avg = simLoss(0); for (let i = 0; i < s; i++) { avg = i < 5 ? simLoss(i) * .5 + avg * .5 : avg * .96 + simLoss(i) * .04; i ? c.lineTo(X(i), Y(avg)) : c.moveTo(X(i), Y(avg)); } c.stroke();
+    c.fillStyle = '#ffd23f'; c.beginPath(); c.arc(X(s - 1), Y(simLoss(s - 1)), 3, 0, 7); c.fill();
+  }
+}
+function setStage(st) {
+  LOOP.stage = st;
+  $$('#loopcode .ln').forEach((l, i) => l.classList.toggle('on', st === -2 ? i < 2 : i === st));
+  const pills = $$('#flowpills .pill');
+  pills.forEach(p => p.classList.remove('on', 'onb'));
+  if (st === 2) pills.slice(0, 6).forEach(p => p.classList.add('on'));
+  if (st === 3) pills[6].classList.add('on');
+  if (st === 5) pills.forEach(p => p.classList.add('onb'));
+}
+function stopLoop() { LOOP.mode = 'idle'; if (LOOP.raf) cancelAnimationFrame(LOOP.raf); LOOP.raf = null; clearTimeout(LOOP.timer); $('#lfast').textContent = '▶▶ Fast'; $('#lslow').disabled = false; }
+function slowStep() {
+  const total = LOOP.E * STEPS_PER_EPOCH; if (LOOP.step >= total) return;
+  stopLoop(); LOOP.mode = 'slow'; $('#lslow').disabled = true;
+  const msgs = [
+    [0, `Outer loop: epoch ${Math.floor(LOOP.step / STEPS_PER_EPOCH) + 1}.`],
+    [1, 'Inner loop: the DataLoader hands over the next batch: 64 images + 64 labels.'],
+    [2, 'Forward: the batch flows through every layer, left to right, giving (64, 10) logits.'],
+    [3, 'Loss: one number for the whole batch.'],
+    [4, 'zero_grad: wipe last step\'s gradients so they don\'t pile up.'],
+    [5, 'Backward: gradients flow right to left; all 10,330 weights get a .grad.'],
+    [6, 'Step: the optimizer nudges every weight. One step done!'],
+  ];
+  let k = 0;
+  const next = () => {
+    if (LOOP.mode !== 'slow') return;
+    if (k < msgs.length) { setStage(msgs[k][0]); $('#lmsg').innerHTML = msgs[k][1]; k++; LOOP.timer = setTimeout(next, 1100); }
+    else { LOOP.step++; drawLoop(); setStage(-1); LOOP.mode = 'idle'; $('#lslow').disabled = false; const b = LOOP.step % STEPS_PER_EPOCH; $('#lmsg').innerHTML = `Step ${LOOP.step} done, loss ${fmt(simLoss(LOOP.step - 1), 2)} (simulated). ${STEPS_PER_EPOCH - (b || STEPS_PER_EPOCH)} batches left in this epoch.`; }
+  };
+  next();
+}
+function fastRun(toEnd) {
+  const total = LOOP.E * STEPS_PER_EPOCH; if (LOOP.mode === 'fast') { stopLoop(); setStage(-1); return; }
+  stopLoop(); if (LOOP.step >= total) LOOP.step = 0;
+  LOOP.mode = 'fast'; $('#lfast').textContent = '⏸ Pause'; $('#lslow').disabled = true;
+  const per = toEnd ? 60 : 6; let flip = 0;
+  const f = () => {
+    if (LOOP.mode !== 'fast') return;
+    LOOP.step = Math.min(total, LOOP.step + per); flip = (flip + 1) % 4; setStage([2, 3, 5, 6][flip]);
+    drawLoop();
+    const b = LOOP.step % STEPS_PER_EPOCH;
+    $('#lmsg').innerHTML = b > STEPS_PER_EPOCH - 8 || b === 0 ? 'Last batch of the epoch: only 60,000 − 937 × 64 = <b>32</b> images.' : 'Same 4 moves, batch after batch.';
+    if (LOOP.step >= total) { stopLoop(); setStage(-1); $('#lmsg').innerHTML = `Done: ${LOOP.E} epochs × ${STEPS_PER_EPOCH} = ${fmtInt(total)} optimizer steps, ${fmtInt(LOOP.E * 60000)} images seen.`; return; }
+    LOOP.raf = requestAnimationFrame(f);
+  };
+  LOOP.raf = requestAnimationFrame(f);
+}
+function initLoop() {
+  if (STEPS_PER_EPOCH !== 938) showFatal('steps per epoch should be 938');
+  const pre = $('#loopcode'); CODE.forEach(([code, cm]) => { const l = h('span', { class: 'ln' }, code.padEnd(30, ' '), h('span', { class: 'cmt' }, cm)); pre.append(l); });
+  const fp = $('#flowpills'); FLOWP.forEach(p => fp.append(h('span', { class: 'pill' }, p)));
+  lcC = setupCanvas($('#lccv'), 320, 170);
+  $('#lslow').onclick = slowStep; $('#lfast').onclick = () => fastRun(false); $('#lend').onclick = () => { if (LOOP.mode === 'fast') stopLoop(); fastRun(true); };
+  $('#lreset').onclick = () => { stopLoop(); LOOP.step = 0; setStage(-1); $('#lmsg').textContent = ''; drawLoop(); };
+  const setE = e => { stopLoop(); LOOP.E = clamp(e, 1, 20); LOOP.step = Math.min(LOOP.step, LOOP.E * STEPS_PER_EPOCH); $('#eval').textContent = LOOP.E; drawLoop(); };
+  $('#eminus').onclick = () => setE(LOOP.E - 1); $('#eplus').onclick = () => setE(LOOP.E + 1);
+  drawLoop();
+}
+
+/* =====================================================================
+   §10 Evaluate
+   ===================================================================== */
+const CMN = ['T-shirt', 'Shirt', 'Sneaker'];
+const CM0 = [[850, 140, 10], [180, 800, 20], [5, 15, 980]];
+let CMV = CM0.map(r => r.slice()); let cmFocus = null;
+function drawOver() {
+  const c = setupCanvas($('#ovcv'), 320, 160);
+  c.fillStyle = '#141821'; c.fillRect(0, 0, 320, 160);
+  const X = e => 34 + (e - 1) / 19 * 276, Y = a => 135 - (a - 80) / 20 * 120;
+  c.strokeStyle = '#3a4252'; c.beginPath(); c.moveTo(34, 135.5); c.lineTo(312, 135.5); c.moveTo(34.5, 10); c.lineTo(34.5, 135); c.stroke();
+  c.font = '10px sans-serif'; c.fillStyle = '#98a2b3'; c.textAlign = 'right'; for (const a of [80, 90, 100]) c.fillText(a + '%', 30, Y(a) + 3);
+  c.textAlign = 'center'; c.fillText('epoch →', 290, 152); for (const e of [1, 5, 10, 15, 20]) c.fillText(String(e), X(e), 148);
+  const tr = e => 100 - 17 * Math.exp(-e / 5) - .5, te = e => 90.5 - 8 * Math.exp(-e / 2.5) - Math.max(0, e - 9) * .12;
+  const line = (f, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (let e = 1; e <= 20; e += .25) { e === 1 ? c.moveTo(X(e), Y(f(e))) : c.lineTo(X(e), Y(f(e))); } c.stroke(); };
+  line(tr, '#58c4dd', 2); line(te, '#83c167', 2);
+  c.fillStyle = '#58c4dd'; c.textAlign = 'left'; c.fillText('train', X(17.2), Y(tr(18)) - 6); c.fillStyle = '#83c167'; c.fillText('test', X(17.5), Y(te(18)) + 13);
+  c.strokeStyle = '#ffd23f'; c.setLineDash([3, 3]); c.beginPath(); c.moveTo(X(15), Y(tr(15))); c.lineTo(X(15), Y(te(15))); c.stroke(); c.setLineDash([]);
+  c.fillStyle = '#ffd23f'; c.textAlign = 'right'; c.fillText('gap = overfitting', X(14.6), Y((tr(15) + te(15)) / 2) + 3);
+}
+function drawCM() {
+  const box = $('#cm');
+  if (!box.children.length) {
+    box.append(h('div', { class: 'hd' }, 'true ↓ / pred →'), ...CMN.map(n => h('div', { class: 'hd' }, n)), h('div', { class: 'hd' }, 'row Σ'));
+    for (let r = 0; r < 3; r++) {
+      box.append(h('div', { class: 'rh' }, CMN[r]));
+      for (let c = 0; c < 3; c++) {
+        const inp = h('input', { type: 'number', inputmode: 'numeric', min: '0', value: CMV[r][c], 'aria-label': `true ${CMN[r]}, predicted ${CMN[c]}` });
+        if (r === c) inp.classList.add('diag');
+        inp.addEventListener('input', () => { CMV[r][c] = Math.max(0, parseInt(inp.value, 10) || 0); cmFocus = [r, c]; drawCM(); });
+        inp.addEventListener('focus', () => { cmFocus = [r, c]; drawCM(); });
+        box.append(inp);
+      }
+      box.append(h('div', { class: 'sum', 'data-r': r }));
+    }
+    box.append(h('div', { class: 'hd' }, 'col Σ'), ...[0, 1, 2].map(c => h('div', { class: 'sum', 'data-c': c })), h('div'));
+  }
+  const ins = $$('#cm input');
+  ins.forEach((inp, k) => { const r = k / 3 | 0, c = k % 3; if (document.activeElement !== inp) inp.value = CMV[r][c]; });
+  const rs = CMV.map(r => r.reduce((a, b) => a + b, 0)), cs = [0, 1, 2].map(c => CMV.reduce((a, r) => a + r[c], 0));
+  $$('#cm [data-r]').forEach(e => e.textContent = rs[+e.dataset.r]); $$('#cm [data-c]').forEach(e => e.textContent = cs[+e.dataset.c]);
+  const pr = $('#prr'); pr.innerHTML = '';
+  pr.append(h('div', { class: 'h' }, ''), h('div', { class: 'h' }, 'precision'), h('div', { class: 'h' }, 'recall'));
+  const hl = cmFocus ? cmFocus : null;
+  for (let k = 0; k < 3; k++) {
+    const P = cs[k] ? CMV[k][k] / cs[k] : 0, R = rs[k] ? CMV[k][k] / rs[k] : 0;
+    const hurtP = hl && hl[0] !== hl[1] && hl[1] === k, hurtR = hl && hl[0] !== hl[1] && hl[0] === k;
+    const bar = (v, hurt, title) => { const d = h('div', { class: 'mb', title }); const i = h('i'); i.style.width = (v * 100) + '%'; i.style.background = hurt ? 'var(--red)' : 'var(--purple)'; d.append(i, h('span', {}, (v * 100).toFixed(1) + '%')); if (hurt) d.style.outline = '1.5px solid var(--red)'; return d; };
+    pr.append(h('div', {}, CMN[k]), bar(P, hurtP, `${CMV[k][k]} / ${cs[k]}`), bar(R, hurtR, `${CMV[k][k]} / ${rs[k]}`));
+  }
+  const tot = rs.reduce((a, b) => a + b, 0), acc = tot ? (CMV[0][0] + CMV[1][1] + CMV[2][2]) / tot : 0;
+  pr.append(h('div', { class: 'h' }, 'accuracy'), h('div', { style: 'grid-column:span 2;font-family:var(--mono)' }, `${(acc * 100).toFixed(1)}%  (${CMV[0][0] + CMV[1][1] + CMV[2][2]} / ${tot})`));
+  const x = $('#cmx');
+  if (!hl) x.innerHTML = 'Tap a cell to see which score its mistakes hurt.';
+  else if (hl[0] === hl[1]) x.innerHTML = `<b class="c-green">${CMN[hl[0]]} called ${CMN[hl[0]]}</b>: correct. Raises both precision and recall for ${CMN[hl[0]]}.`;
+  else x.innerHTML = `<b>A real ${CMN[hl[0]]} called "${CMN[hl[1]]}"</b> (${CMV[hl[0]][hl[1]]} images).<br>• Lowers <b class="c-red">${CMN[hl[0]]} recall</b>: a ${CMN[hl[0]]} the model missed.<br>• Lowers <b class="c-red">${CMN[hl[1]]} precision</b>: a false "${CMN[hl[1]]}" call.`;
+}
+function initEval() {
+  drawOver(); drawCM();
+  $('#moreshirt').onclick = () => {
+    const mv = (r, from, to, n) => { const k = Math.min(n, CMV[r][from]); CMV[r][from] -= k; CMV[r][to] += k; };
+    mv(0, 0, 1, 60); mv(1, 0, 1, 60); mv(2, 2, 1, 10); cmFocus = [0, 1]; drawCM();
+    $('#cmx').innerHTML += '<br><span class="c-yellow">Shirt recall went up (more real shirts caught), Shirt precision went down (more false "Shirt" calls).</span>';
+  };
+  $('#cmreset').onclick = () => { CMV = CM0.map(r => r.slice()); cmFocus = null; drawCM(); };
+}
+
+/* =====================================================================
+   Check questions
+   ===================================================================== */
+const CHECKS = {
+  q1: { q: 'Which of these is true?', opts: [
+    { t: 'Writing <code>model = CNN()</code> runs your first forward pass.', why: 'Defining the model only builds the layers and fills them with random weights. No image goes through until you call <code>model(x)</code>, which happens inside the training loop.' },
+    { t: 'Evaluation runs on the training set, to check what the model learned.', why: 'Evaluation uses the separate test set: 10,000 images the model never trained on. Scoring on training images would reward memorizing (§10).' },
+    { t: 'The training loop is where images flow through the model and the weights change.', ok: true, why: 'Steps 1–4 only set things up (data, model, loss, optimizer). Step 5 runs them over and over: forward, loss, backward, step.' },
+    { t: 'The optimizer is created after training finishes.', why: 'It has to exist before the loop, because the loop calls <code>optimizer.step()</code> on every batch.' }] },
+  q2: { q: 'A batch of images has shape (64, 1, 28, 28). What does the <b>1</b> mean?', opts: [
+    { t: 'It\'s the index of the first image', why: 'A shape lists sizes, not positions: 64 images, 1 channel, 28 rows, 28 columns.' },
+    { t: 'There is 1 colour channel, because the images are grayscale', ok: true, why: 'A colour photo would have 3 channels (red, green, blue). FashionMNIST has one brightness number per pixel.' },
+    { t: 'Each image has 1 label', why: 'Labels live in a separate tensor of shape (64,), one integer per image.' },
+    { t: 'The batch holds only 1 class', why: 'A shuffled batch mixes classes. The labels tensor says which class each image is.' }] },
+  q3: { q: 'conv1 uses a 3×3 filter, yet its output is still 28×28, not 26×26. Why?', opts: [
+    { t: 'padding=1 adds a border of zeros, so the filter can be centred on every pixel, edges included', ok: true, why: 'Without padding, a 3×3 filter fits in only 28 − 3 + 1 = 26 positions per row. The zero border adds 2: 28 + 2 − 3 + 1 = 28. You saw the grey border in the animation.' },
+    { t: 'Because there are 16 filters', why: 'The number of filters sets the number of output channels (16), not height and width.' },
+    { t: 'MaxPool puts the missing pixels back', why: 'Pooling only ever shrinks: it halves 28 → 14 after the conv.' },
+    { t: 'The filter is really 1×1', why: 'It\'s 3×3 = 9 weights, as the animation showed. The size is kept by padding, not by a tiny filter.' }] },
+  q4: { q: 'Apply ReLU, then 2×2 max pooling, to [[−3, 2], [1, −5]]. What comes out?', opts: [
+    { t: '2', ok: true, why: 'ReLU turns −3 and −5 into 0, giving [[0, 2], [1, 0]]. The largest of those four is 2.' },
+    { t: '−5', why: '−5 is the smallest value, and ReLU would zero it anyway. Max pooling keeps the largest.' },
+    { t: '0', why: 'ReLU zeroes only the negatives. 2 and 1 survive, and max picks 2.' },
+    { t: '−1.25 (the average)', why: 'That\'s average pooling, done before ReLU. Your model uses max pooling: keep the largest of the four.' }] },
+  q5: { q: 'Why does the linear layer hold about 76% of all parameters?', opts: [
+    { t: 'Conv filters are shared across all positions, but the linear layer gives every input–output pair its own weight (784 × 10)', ok: true, why: 'Weight sharing is why convs are cheap: conv1\'s 9 weights per filter are reused at all 784 positions.' },
+    { t: 'Linear layers need many more biases', why: 'It has only 10 biases. Its 7,840 weights are the bulk.' },
+    { t: 'Because it\'s the last layer', why: 'Position doesn\'t matter. What matters is how many connections each need their own weight.' },
+    { t: 'Conv layers have no parameters', why: 'They do, 160 and 2,320, just far fewer thanks to sharing.' }] },
+  q6: { q: 'One logit (say, the "Coat" score) is…', opts: [
+    { t: 'the probability the image is a coat, between 0 and 1', why: 'Logits can be any number, negative or above 1. Softmax (§7) turns the 10 logits into probabilities.' },
+    { t: 'a weighted sum of all 784 flattened values, plus one bias', ok: true, why: 'That\'s exactly what the strips showed: 784 products added up, plus b.' },
+    { t: 'a count of pixels that look like a coat', why: 'It\'s a sum of weight × value, which can be negative. It isn\'t a count.' },
+    { t: 'computed from only one of the 16 channels', why: 'Every class score uses all 784 values from all 16 channels.' }] },
+  q7: { q: 'What does the loss function do?', opts: [
+    { t: 'It gives the model feedback and tells each weight how to change', why: 'A common mix-up. The loss only measures error, as one number. Working out how each weight should change is backprop (gradients, §8), and actually changing them is the optimizer.' },
+    { t: 'It measures how wrong the predictions are, as one number, using the true labels', ok: true, why: 'Cross-entropy is −ln(probability given to the true class), averaged over the batch. Lower is better; 0 is perfect.' },
+    { t: 'It picks the predicted class', why: 'The prediction is just the biggest logit (argmax). The loss needs the true label and scores the probabilities.' },
+    { t: 'It\'s only used at evaluation time', why: 'Training depends on it: every batch computes the loss, then backprop works out its gradients.' }] },
+  q8: { q: 'Which sentence is right?', opts: [
+    { t: 'The optimizer decides how to backprop', why: 'Backprop is always the same calculus (the chain rule), run by <code>loss.backward()</code>. The optimizer never touches it; it only reads the gradients afterwards.' },
+    { t: '<code>loss.backward()</code> computes a gradient for every weight; <code>optimizer.step()</code> then nudges each weight against its gradient', ok: true, why: 'Two separate jobs: ① measure each weight\'s slope, ② take a step downhill. You pressed them as two buttons.' },
+    { t: '<code>loss.backward()</code> updates the weights', why: 'backward() only writes gradients into each weight\'s <code>.grad</code>. The ball didn\'t move until step().' },
+    { t: 'A bigger learning rate always trains faster', why: 'Too big overshoots the valley and can blow up. Try "way too big" on the surface.' }] },
+  q9: { q: '60,000 training images, batch size 64. How many optimizer steps are in one epoch?', opts: [
+    { t: '64', why: '64 is how many images go into each step, not the number of steps.' },
+    { t: '938', ok: true, why: '60,000 ÷ 64 = 937.5, so 937 full batches plus a last batch of 32 make 938 steps, one <code>optimizer.step()</code> each.' },
+    { t: '60,000', why: 'That would be batch size 1. With batches of 64, each step uses 64 images at once.' },
+    { t: '1', why: 'One step per batch, not per epoch. An epoch is a full pass: 938 batches.' }] },
+  q10: { q: 'Your model starts calling far more images "Shirt". What usually happens to Shirt\'s scores?', opts: [
+    { t: 'Recall goes down, precision goes up', why: 'This is backwards. Calling more things "Shirt" catches more of the real shirts, so recall <i>rises</i>. But more of those calls are wrong, so precision <i>falls</i>.' },
+    { t: 'Recall goes up, precision goes down', ok: true, why: 'Recall asks "of the real shirts, how many did we catch?" Precision asks "of our Shirt calls, how many were right?" Try the "say Shirt more" button.' },
+    { t: 'Both go up', why: 'Usually not. The extra Shirt calls include mistakes, which drag precision down.' },
+    { t: 'Neither changes; only accuracy does', why: 'Both come from the Shirt row and column, which both change.' }] },
+};
+
+/* =====================================================================
+   Boot
+   ===================================================================== */
+function boot() {
+  PRESETS = Array.from({ length: 10 }, (_, k) => presetImage(k));
+  ILLW = buildIllustrative();
+  const v = verifyModel(ILLW);
+  if (v.errs.length) { showFatal('MODEL CHECK FAILED. The page\'s model does not match the spec:\n' + v.errs.join('\n')); throw new Error('model check failed'); }
+  initPipe(); initTerms(); initWeights();
+  initData(); initConv(); initRelu(); initShapes(v); initFlat(); initLoss(); initOpt(); initLoop(); initEval();
+  for (const [id, spec] of Object.entries(CHECKS)) mcq($('#' + id), spec);
+  recomputeConv(); selectFilter(0);
+  window.__ready = true;
+}
+try { boot(); } catch (e) { showFatal('Startup failed: ' + e.message); throw e; }
+</script>
+</body>
+</html>
