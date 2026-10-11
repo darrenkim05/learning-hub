@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Neural Network Basics</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<style>
+/*@kit.css*/
+/* ---- page ---- */
+.tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin:8px 0}
+.tbl th,.tbl td{padding:5px 4px;text-align:right;border-bottom:1px solid var(--line)}
+.tbl th{font-family:inherit;color:var(--muted);font-weight:600;font-size:12px}
+.tbl tr.sum td{border-top:2px solid var(--line);font-weight:700}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13.5px;line-height:1.4;margin:10px 0}
+.vs div{border:1px solid var(--line);border-radius:12px;padding:10px;background:#0f131a}
+.vs b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.recipe{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0}
+.recipe div{border-radius:12px;padding:8px;font-size:12.5px;line-height:1.35;text-align:center;background:#0f131a;border:1px solid var(--line)}
+.recipe b{display:block;font-size:14px;margin-bottom:2px}
+.tag{display:inline-block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid;margin-left:6px;vertical-align:2px;font-weight:700}
+.tag.model{color:var(--purple);border-color:var(--purple)}.tag.loss{color:var(--orange);border-color:var(--orange)}.tag.opt{color:var(--blue);border-color:var(--blue)}
+.nest{display:block;margin:0 auto}
+.ctl{display:grid;grid-template-columns:84px minmax(0,1fr);gap:10px 10px;align-items:center;font-size:14px}
+.ctl .chips{margin:0}
+.ctl .seg{justify-self:start}
+.ctl .chip{padding:5px 9px;font-size:12.5px;min-height:32px}
+.stepper{display:inline-flex;align-items:center;gap:8px}
+.stepper b{font-family:var(--mono);min-width:16px;text-align:center}
+.stepper .btn{min-height:32px;padding:2px 12px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;text-align:center;margin:8px 0}
+.stats div{background:#0f131a;border-radius:9px;padding:5px 2px}
+.stats b{display:block;font-family:var(--mono);font-size:15px}
+.stats span{font-size:10.5px;color:var(--muted)}
+.try{border:1px solid var(--line);border-left:3px solid var(--yellow);border-radius:0 12px 12px 0;padding:10px 12px;margin:10px 0;background:var(--panel)}
+.try p{margin:0 0 8px;font-size:14.5px;line-height:1.45}
+.try .btn{min-height:32px;font-size:13px;padding:4px 10px}
+.bigbtn{display:block;text-align:center;text-decoration:none;font-weight:700;font-size:17px;color:#1a1400;background:var(--yellow);border-radius:14px;padding:14px;margin:18px 0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);justify-content:center;margin:6px 0}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:3px;margin-right:5px}
+.flowbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.flowbtns .btn{font-size:13.5px}
+.mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
+.mini div{text-align:center;font-size:11px;line-height:1.3}
+.mini canvas{border-radius:6px;border:1px solid var(--line);margin-bottom:3px}
+#f5 .katex{font-size:.95em}
+#mathnote{font-size:13px;color:var(--orange);text-align:center;margin:6px 0 0}
+</style>
+</head>
+<body>
+<div id="fatal" hidden></div>
+<header id="pipe">
+  <div class="pipe-inner">
+    <nav class="strip dots" id="strip" aria-label="Progress"></nav>
+    <div class="here" id="here"></div>
+  </div>
+</header>
+
+<main class="wrap">
+<div class="hero">
+  <h1>Neural networks, from a straight line up</h1>
+  <p class="sub">For complete beginners · every formula worked through with real numbers · prequel to <a href="phase0-cnn-explorer.html" style="color:var(--blue)">Inside my first CNN</a></p>
+  <p id="mathnote" hidden>Formulas need an internet connection to display nicely. Without one they appear as plain text.</p>
+</div>
+
+<!-- ============ §1 ============ -->
+<section class="sec" id="s1" data-title="What ML is">
+  <div class="kick">§1 · The idea</div>
+  <h2>Rules learned from examples</h2>
+  <p>Try to write a program that tells a T-shirt from a sneaker. "If the top half is wide, it's a T-shirt…" What about a T-shirt photographed sideways, or a crumpled one? Hand-written rules break almost immediately.</p>
+  <p><b>Machine learning (ML)</b> flips the job around. Instead of writing the rule yourself, you show the computer thousands of examples <i>with the right answers</i>, and it works out a rule that fits them.</p>
+  <div class="vs">
+    <div><b class="muted">Normal programming</b>rules + data<br>→ <span class="c-yellow">answers</span></div>
+    <div><b class="c-yellow">Machine learning</b>data + answers<br>→ <span class="c-purple">rules</span></div>
+  </div>
+  <div class="analogy">A <b>model</b> is a machine with knobs. Turn the knobs and its answers change. <b>Training</b> means turning the knobs until its answers match the examples, like tuning an old radio until the station comes in clearly.</div>
+  <div class="def"><b>Model</b>: a formula that turns an input into an answer. <b>Parameters</b> (also called <b>weights</b>): the knobs, the numbers inside the formula that training is allowed to change. <b>Training</b>: the process of choosing those numbers.</div>
+  <h3>The same three ingredients, every time</h3>
+  <p>Everything on this page, up to the CNN you built, uses the same recipe. Each section is tagged with the ingredient it's about.</p>
+  <div class="recipe">
+    <div style="border-color:var(--purple)"><b class="c-purple">Model</b>a formula with knobs</div>
+    <div style="border-color:var(--orange)"><b class="c-orange">Loss</b>one number for how wrong it is</div>
+    <div style="border-color:var(--blue)"><b class="c-blue">Optimizer</b>a rule for turning the knobs</div>
+  </div>
+  <div class="card">
+    <div class="lbl">Where things sit · tap a ring</div>
+    <svg id="nest" class="nest" viewBox="0 0 320 230" width="100%" style="max-width:320px"></svg>
+    <p class="small" id="nestmsg" style="margin:8px 0 0;min-height:42px"></p>
+  </div>
+  <div class="takeaway">ML = a <span class="c-purple">formula with knobs</span> + <span class="c-orange">one number for wrongness</span> + <span class="c-blue">a rule for turning the knobs</span>.</div>
+  <div class="check" id="q1"></div>
+</section>
+
+<!-- ============ §2 ============ -->
+<section class="sec" id="s2" data-title="A model">
+  <div class="kick">§2 · The simplest model <span class="tag model">model</span></div>
+  <h2>A formula with two knobs</h2>
+  <p>You hang weights on a spring and measure how far it stretches. Hooke's law says stretch grows in a straight line with force, but real measurements are noisy, so the 24 points below don't sit exactly on one line.</p>
+  <p>Our model is a straight line:</p>
+  <div class="M">\hat y = \pw{w}\,\bl{x} + \pw{b}</div>
+  <div class="def"><span class="m">\bl{x}</span>: the input (force). <span class="m">\hat y</span> ("y-hat"): the model's <i>guess</i> for the stretch. The hat always means "predicted". <span class="m">y</span> without a hat is the true measured value.<br><span class="m">\pw{w}</span>: the slope, i.e. how much the guess rises when <span class="m">x</span> goes up by 1.<br><span class="m">\pw{b}</span>: the intercept, i.e. the guess when <span class="m">x = 0</span>.<br>The two knobs are <span class="m">\pw{w}</span> and <span class="m">\pw{b}</span>.</div>
+  <div class="steps-math">
+    <div class="small muted">Worked example: <span class="m">\pw{w}=0.6,\ \pw{b}=0.6</span>, force <span class="m">\bl{x}=2</span></div>
+    <div class="M">\hat y = \pw{0.6}\times\bl{2} + \pw{0.6} = 1.2 + 0.6 = 1.8</div>
+  </div>
+  <div class="predict" id="p2"></div>
+  <div class="card">
+    <div class="lbl">Turn the knobs</div>
+    <canvas id="c2"></canvas>
+    <div class="sl"><span class="m">\pw{w}</span><input type="range" id="w2" min="-100" max="200" value="20"><output id="w2o"></output></div>
+    <div class="sl"><span class="m">\pw{b}</span><input type="range" id="b2" min="-100" max="300" value="200"><output id="b2o"></output></div>
+    <div class="M" id="f2"></div>
+    <p class="small muted" style="margin:0">The <span class="c-yellow">yellow</span> dot is the model's guess at x = 2. Try to make the line follow the points.</p>
+  </div>
+  <div id="n2"></div>
+  <div class="takeaway">A model is just a formula. Its <span class="c-purple">knobs</span> (here <span class="m">\pw{w}</span> and <span class="m">\pw{b}</span>) are the numbers training will choose. The inputs <span class="m">\bl{x}</span> are given; you never choose those.</div>
+  <div class="check" id="q2"></div>
+</section>
+
+<!-- ============ §3 ============ -->
+<section class="sec" id="s3" data-title="The loss">
+  <div class="kick">§3 · Measuring wrongness <span class="tag loss">loss</span></div>
+  <h2>One number for "how wrong"</h2>
+  <p>To improve the knobs, we first need a score that says whether a setting is better or worse. That score is called the <b>loss</b>. Lower is better, and 0 means perfect.</p>
+  <h3>Step 1: the error for one point</h3>
+  <div class="M">e_i = \hat y_i - y_i</div>
+  <p class="small">The little <span class="m">i</span> means "point number i". Positive <span class="m">e_i</span>: the line is above the point (guessed too high). Negative: guessed too low.</p>
+  <h3>Step 2: why not just add the errors?</h3>
+  <p>Errors of <span class="m">+1</span> and <span class="m">-1</span> add to <span class="m">0</span>, which would say "perfect" for a line that misses both points. We need every miss to count as bad.</p>
+  <h3>Step 3: square them, then average</h3>
+  <div class="M">\og{L} = \frac{1}{N}\sum_{i=1}^{N} e_i^{\,2} = \frac{1}{N}\sum_{i=1}^{N}\left(\pw{w}\,\bl{x_i} + \pw{b} - y_i\right)^2</div>
+  <div class="def"><span class="m">\sum_{i=1}^{N}</span> ("sigma") means "add this up for every point, from <span class="m">i=1</span> to <span class="m">i=N</span>". <span class="m">N</span> is the number of points, so dividing by <span class="m">N</span> makes it an average. This loss is called the <b>mean squared error (MSE)</b>.</div>
+  <div class="why"><b>Why squares?</b> ① A square is never negative, so misses can't cancel. ② Big misses count much more than small ones: an error of 3 costs 9, but an error of 1 costs only 1. ③ A square is a smooth curve with no sharp corners, so we can take its slope, which §4 needs.</div>
+  <div class="steps-math">
+    <div class="small muted">Worked example: three points, knobs <span class="m">\pw{w}=0.6,\ \pw{b}=0.6</span></div>
+    <table class="tbl"><tr><th>x</th><th>y</th><th>ŷ = 0.6x + 0.6</th><th>e = ŷ − y</th><th>e²</th></tr>
+      <tr><td>1</td><td>1.1</td><td>1.2</td><td class="c-blue">+0.1</td><td>0.01</td></tr>
+      <tr><td>2</td><td>2.0</td><td>1.8</td><td class="c-red">−0.2</td><td>0.04</td></tr>
+      <tr><td>3</td><td>2.3</td><td>2.4</td><td class="c-blue">+0.1</td><td>0.01</td></tr>
+      <tr class="sum"><td colspan="4" style="text-align:left">add up, divide by N = 3</td><td class="c-orange">0.02</td></tr></table>
+    <div class="M">\og{L} = \frac{0.01 + 0.04 + 0.01}{3} = \og{0.02}</div>
+  </div>
+  <div class="card">
+    <div class="lbl">See it: MSE is the average area of the orange squares</div>
+    <canvas id="c3"></canvas>
+    <div class="sl"><span class="m">\pw{w}</span><input type="range" id="w3" min="-100" max="200" value="20"><output id="w3o"></output></div>
+    <div class="sl"><span class="m">\pw{b}</span><input type="range" id="b3" min="-100" max="300" value="200"><output id="b3o"></output></div>
+    <div class="lossbig" id="l3"></div>
+  </div>
+  <p>Notice that the loss depends only on the knobs: change <span class="m">\pw{w}</span> or <span class="m">\pw{b}</span> and you get a different number. So the loss is a <b>function of the knobs</b>, written <span class="m">\og{L}(\pw{w},\pw{b})</span>. Finding the best knobs means finding where this function is lowest.</p>
+  <div id="n3"></div>
+  <div class="takeaway">The <span class="c-orange">loss</span> is one number for how wrong the current knobs are. It only <b>measures</b>; it doesn't fix anything. MSE = the average of the squared misses.</div>
+  <div class="check" id="q3"></div>
+</section>
+
+<!-- ============ §4 ============ -->
+<section class="sec" id="s4" data-title="Gradient descent">
+  <div class="kick">§4 · Going downhill <span class="tag opt">optimizer</span></div>
+  <h2>Follow the slope down</h2>
+  <p>We want the knobs where the loss is lowest. Trying every setting is impossible: your CNN has 10,330 knobs. We need a way to know <i>which direction</i> to turn each knob.</p>
+  <div class="analogy">You're on a hillside in thick fog and want to reach the valley floor. You can't see it, but you can feel which way the ground slopes under your feet. So you take a step downhill, feel again, and step again. The hillside is the loss, your position is the knob settings, and your height is the loss value.</div>
+  <h3>One knob first</h3>
+  <p>Freeze <span class="m">\pw{b}</span> and look at the loss as you slide only <span class="m">\pw{w}</span>. Because the loss is built from squares, the curve is a bowl.</p>
+  <div class="card">
+    <canvas id="c4a"></canvas>
+    <div class="M" id="f4a"></div>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="st4a">Take one step</button><button class="btn" id="rs4a">Reset</button></div>
+    <p class="small" id="m4a" style="margin:0;min-height:40px"></p>
+  </div>
+  <div class="def">The <b>derivative</b> <span class="m">\og{\tfrac{dL}{dw}}</span> is the slope of that curve (the <span class="c-orange">orange</span> tangent line). Positive slope: the loss rises if <span class="m">\pw{w}</span> goes up, so go down. Negative slope: go up. Zero slope: you're at the bottom.</div>
+  <p>That gives the whole rule, called <b>gradient descent</b>:</p>
+  <div class="M">\pw{w}_{\text{new}} = \pw{w} - \eta\,\og{\frac{\partial L}{\partial w}}</div>
+  <div class="def"><span class="m">\eta</span> ("eta") is the <b>learning rate</b>: the step size. The minus sign is what makes you go <i>downhill</i>. The curly <span class="m">\partial</span> is just "d" for a function with several knobs: "the slope in the <span class="m">w</span> direction, holding the other knobs still". Doing this for every knob, every step, is the <b>optimizer</b>'s job.</div>
+  <h3>Where does the slope formula come from?</h3>
+  <p>Take the MSE and differentiate with respect to <span class="m">\pw{w}</span>. One rule does all the work, the <b>chain rule</b>: the derivative of <span class="m">(\text{stuff})^2</span> is <span class="m">2\cdot\text{stuff}\cdot\frac{d(\text{stuff})}{dw}</span>.</p>
+  <div class="steps-math">
+    <div class="M">\begin{aligned}\og{L} &= \frac{1}{N}\sum_i \big(\underbrace{\pw{w}\bl{x_i} + \pw{b} - y_i}_{\text{stuff} \;=\; e_i}\big)^2\\[4pt] \og{\frac{\partial L}{\partial w}} &= \frac{1}{N}\sum_i 2\,e_i\cdot\underbrace{\bl{x_i}}_{\frac{d\,\text{stuff}}{dw}} \;=\; \frac{2}{N}\sum_i e_i\,\bl{x_i}\\[4pt] \og{\frac{\partial L}{\partial b}} &= \frac{2}{N}\sum_i e_i\cdot 1 \;=\; \frac{2}{N}\sum_i e_i\end{aligned}</div>
+  </div>
+  <div class="why"><b>Read it in words.</b> <span class="m">\og{\partial L/\partial w}</span> is the average of (error × input). If the line is too <i>low</i> at the big-<span class="m">x</span> points (negative errors where <span class="m">x</span> is large), the sum is negative, so the update <i>raises</i> <span class="m">\pw{w}</span>, making the line steeper. The formula is just "fix the misses, weighted by where they are".</div>
+  <div class="steps-math">
+    <div class="small muted">Worked step: the 3 points from §3, starting from a too-flat line <span class="m">\pw{w}=0.4,\ \pw{b}=0.6</span>, with <span class="m">\eta = 0.1</span></div>
+    <table class="tbl"><tr><th>x</th><th>y</th><th>ŷ</th><th>e</th><th>e·x</th></tr>
+      <tr><td>1</td><td>1.1</td><td>1.0</td><td class="c-red">−0.1</td><td>−0.1</td></tr>
+      <tr><td>2</td><td>2.0</td><td>1.4</td><td class="c-red">−0.6</td><td>−1.2</td></tr>
+      <tr><td>3</td><td>2.3</td><td>1.8</td><td class="c-red">−0.5</td><td>−1.5</td></tr>
+      <tr class="sum"><td colspan="3" style="text-align:left">sums</td><td>−1.2</td><td>−2.8</td></tr></table>
+    <div class="M">\begin{aligned}\og{\tfrac{\partial L}{\partial w}} &= \tfrac{2}{3}(-2.8) = \og{-1.87}\\ \og{\tfrac{\partial L}{\partial b}} &= \tfrac{2}{3}(-1.2) = \og{-0.80}\\[4pt] \pw{w}_{\text{new}} &= 0.4 - 0.1\times(-1.87) = \pw{0.59}\\ \pw{b}_{\text{new}} &= 0.6 - 0.1\times(-0.80) = \pw{0.68}\end{aligned}</div>
+    <p class="small" style="margin:6px 0 0">Both gradients are negative, so both knobs go <b>up</b>. The loss drops from <span class="c-orange">0.207</span> to <span class="c-orange">0.023</span> in one step. Keep stepping and you reach <span class="m">\pw{w}=0.6,\ \pw{b}=0.6</span>, where both gradients are exactly 0: the bottom of the bowl.</p>
+  </div>
+  <div id="n4a"></div>
+  <h3>Both knobs at once</h3>
+  <p>With two knobs, the loss is a surface over the <span class="m">(\pw{w},\pw{b})</span> plane, like a valley on a map. The two slopes together form the <b>gradient</b>, an arrow <span class="m">\og{\nabla L} = \left(\og{\tfrac{\partial L}{\partial w}},\og{\tfrac{\partial L}{\partial b}}\right)</span> that points straight uphill. Gradient descent steps against it.</p>
+  <div class="card">
+    <div class="lbl">Exact loss surface for the 24 spring points · tap to move the start</div>
+    <canvas id="c4s" class="draw"></canvas>
+    <canvas id="c4f" style="margin-top:8px"></canvas>
+    <div class="M" id="f4b"></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn" id="st4b">One step</button><button class="btn primary" id="run4b">▶ Run</button><button class="btn" id="rs4b">Reset</button>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:0"><span class="m">\eta</span><div class="chips" id="lr4" style="margin:0"></div></div>
+    <p class="small" id="m4b" style="margin:0;min-height:68px"></p>
+  </div>
+  <div class="ode" id="ode4"></div>
+  <div id="n4b"></div>
+  <div class="takeaway">The <span class="c-orange">gradient</span> tells you which way is uphill and how steep. The <span class="c-blue">optimizer</span> steps the knobs the other way: <span class="m">\pw{w} \leftarrow \pw{w} - \eta\,\og{\partial L/\partial w}</span>. Too small an <span class="m">\eta</span> is slow; too big overshoots.</div>
+  <div class="check" id="q4"></div>
+</section>
+
+<!-- ============ §5 ============ -->
+<section class="sec" id="s5" data-title="Classification">
+  <div class="kick">§5 · Logistic regression <span class="tag model">model</span><span class="tag loss">loss</span></div>
+  <h2>From "how much" to "which one"</h2>
+  <p>Now each point belongs to a <b>class</b>: <span class="c-blue">blue</span> or <span class="c-red">red</span>. Each point has two coordinates, <span class="m">\bl{x_1}</span> and <span class="m">\bl{x_2}</span>. We want the model to output the <b>probability that a point is blue</b>, a number between 0 and 1.</p>
+  <p>A straight-line formula can output 7 or −3, which aren't probabilities. So we build the model in two steps.</p>
+
+  <h3>Step 1: a score <span class="m">z</span></h3>
+  <div class="M">z = \pw{w_1}\bl{x_1} + \pw{w_2}\bl{x_2} + \pw{b}</div>
+  <p>This is the same weighted sum as before, just with two inputs. <span class="m">z</span> can be any number. Its sign says which side of a line the point is on:</p>
+  <div class="def">The points where <span class="m">z = 0</span> form a <b>straight line</b> (an equation of the form <span class="m">a x_1 + c x_2 + d = 0</span>). On one side <span class="m">z \gt 0</span>, on the other <span class="m">z \lt 0</span>, and <span class="m">|z|</span> grows the further you are from the line.</div>
+  <div class="ode">In vector form, <span class="m">z = \pw{\mathbf w}\cdot\bl{\mathbf x} + \pw{b}</span>, a dot product. <span class="m">\pw{\mathbf w} = (\pw{w_1}, \pw{w_2})</span> is the <b>normal vector</b> of the line <span class="m">z = 0</span>: it points straight across the line, towards the side where <span class="m">z</span> is positive. So changing <span class="m">\pw{\mathbf w}</span> <b>rotates</b> the line, and changing <span class="m">\pw{b}</span> <b>slides</b> it without rotating. The <span class="c-purple">purple arrow</span> in the plot below is <span class="m">\pw{\mathbf w}</span>.</div>
+
+  <h3>Step 2: squash the score into a probability</h3>
+  <p>The <b>sigmoid</b> function, written <span class="m">\sigma</span> ("sigma"), squashes any number into the range 0 to 1:</p>
+  <div class="M">p = \sigma(z) = \frac{1}{1 + e^{-z}}</div>
+  <table class="tbl"><tr><th>z</th><th>−4</th><th>−2</th><th>0</th><th>2</th><th>4</th></tr>
+    <tr><td>σ(z)</td><td class="c-red">0.02</td><td class="c-red">0.12</td><td>0.50</td><td class="c-blue">0.88</td><td class="c-blue">0.98</td></tr></table>
+  <div class="why"><b>Why this shape?</b> Big negative <span class="m">z</span> makes <span class="m">e^{-z}</span> huge, so <span class="m">p \to 0</span>: confident red. Big positive <span class="m">z</span> makes <span class="m">e^{-z} \to 0</span>, so <span class="m">p \to 1</span>: confident blue. At <span class="m">z = 0</span>, <span class="m">p = \tfrac{1}{1+1} = 0.5</span>: can't tell. The curve is also symmetric, <span class="m">\sigma(-z) = 1 - \sigma(z)</span>.</div>
+  <div class="takeaway" style="margin-top:10px">The <b>decision boundary</b> (where the model says 50/50) is where <span class="m">p = 0.5</span>, which is where <span class="m">z = 0</span>, which is a <b>straight line</b>. This model can only ever split the plane with a straight line.</div>
+
+  <div class="steps-math">
+    <div class="small muted">Worked example: knobs <span class="m">\pw{w_1}=-0.8,\ \pw{w_2}=1.5,\ \pw{b}=1</span></div>
+    <div class="small">Blue point <span class="m">(1, 1)</span>:</div><div class="M">\begin{aligned} z &= (-0.8)(1) + (1.5)(1) + 1 = 1.7\\ p &= \sigma(1.7) = \bl{0.85}\end{aligned}</div><div class="small">Red point <span class="m">(-1, -1)</span>:</div><div class="M">\begin{aligned} z &= (-0.8)(-1) + (1.5)(-1) + 1 = 0.3\\ p &= \sigma(0.3) = \rd{0.57}\end{aligned}</div>
+    <p class="small" style="margin:0">The blue point is handled well. The red point gets <span class="m">p = 0.57</span>, so the model leans "blue" for a red point. These knobs need training.</p>
+  </div>
+  <div id="n5a"></div>
+
+  <h3>The loss: cross-entropy</h3>
+  <p>For classification we score the probability the model gave to the <span class="c-green">true</span> class:</p>
+  <div class="M">\og{L} = -\ln\big(\text{probability given to the true class}\big)</div>
+  <table class="tbl"><tr><th>prob. of true class</th><th>1</th><th>0.9</th><th>0.5</th><th>0.1</th><th>0.01</th></tr>
+    <tr><td>loss −ln(p)</td><td class="c-green">0</td><td>0.11</td><td>0.69</td><td class="c-orange">2.30</td><td class="c-orange">4.61</td></tr></table>
+  <div class="why"><b>Why −ln?</b> Certain and right costs exactly 0. Unsure (0.5) costs a bit. <b>Confident and wrong</b> costs a lot, and the cost keeps growing without limit as the probability heads to 0. The model learns that bluffing is expensive. Written with the label <span class="m">y</span> (1 for blue, 0 for red) it becomes <span class="m">\og{L} = -\big[y\ln p + (1-y)\ln(1-p)\big]</span>, which just picks <span class="m">-\ln p</span> for blue points and <span class="m">-\ln(1-p)</span> for red ones.</div>
+  <p>For the red point above: <span class="m">\og{L} = -\ln(1 - 0.57) = -\ln(0.43) = \og{0.85}</span>. That's high, because the model was wrong.</p>
+
+  <h3>The gradient: error × input, again</h3>
+  <p>After the algebra (tap below if you want it), the slope comes out remarkably simple:</p>
+  <div class="M">\og{\frac{\partial L}{\partial w_j}} = (p - y)\,\bl{x_j} \qquad \og{\frac{\partial L}{\partial b}} = p - y</div>
+  <p><span class="m">(p - y)</span> is the error: how far the probability was from the truth. It's the same "error × input" pattern as the line fit in §4.</p>
+  <details class="show"><summary>Show the algebra (chain rule)</summary>
+    <div class="M">\begin{aligned}\frac{d\sigma}{dz} &= \frac{e^{-z}}{(1+e^{-z})^2} = \sigma(z)\,\big(1-\sigma(z)\big) = p(1-p)\\[4pt] \frac{\partial L}{\partial p} &= -\frac{y}{p} + \frac{1-y}{1-p}\\[4pt] \frac{\partial L}{\partial z} &= \frac{\partial L}{\partial p}\cdot\frac{dp}{dz} = \Big(-\frac{y}{p} + \frac{1-y}{1-p}\Big)\,p(1-p)\\ &= -y(1-p) + (1-y)p = p - y\\[4pt] \frac{\partial L}{\partial w_j} &= \frac{\partial L}{\partial z}\cdot\frac{\partial z}{\partial w_j} = (p-y)\,x_j\end{aligned}</div>
+    <p class="small" style="margin:0">The messy fractions cancel. That neat cancellation is a big reason sigmoid and cross-entropy are used together.</p>
+  </details>
+  <div class="steps-math">
+    <div class="small muted">Worked: the red point <span class="m">(-1,-1)</span>, true label <span class="m">y = 0</span>, <span class="m">p = 0.57</span></div>
+    <div class="M">\og{\tfrac{\partial L}{\partial w_1}} = (0.57 - 0)\times(-1) = \og{-0.57}</div>
+    <p class="small" style="margin:0">It's negative, so gradient descent <b>raises</b> <span class="m">\pw{w_1}</span>. For this point <span class="m">x_1 = -1</span>, so a bigger <span class="m">w_1</span> makes <span class="m">w_1 x_1</span> more negative: <span class="m">z</span> drops and the point's probability of being blue drops. That's exactly the fix it needs.</p>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Rotate, slide, train · tap a point to inspect it</div>
+    <canvas id="c5" class="draw"></canvas>
+    <div class="sl"><span class="m">\pw{w_1}</span><input type="range" id="g51" min="-400" max="400" value="-80"><output id="g51o"></output></div>
+    <div class="sl"><span class="m">\pw{w_2}</span><input type="range" id="g52" min="-400" max="400" value="150"><output id="g52o"></output></div>
+    <div class="sl"><span class="m">\pw{b}</span><input type="range" id="g53" min="-400" max="400" value="100"><output id="g53o"></output></div>
+    <div class="M" id="f5" style="min-height:150px"></div>
+    <canvas id="c5s"></canvas>
+    <p class="small muted" style="margin:4px 0 0">The S-curve is σ(z). Each dot is a data point at its score z: blue dots should sit high on the right, red dots low on the left.</p>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="t5">▶ Train</button><button class="btn" id="r5">Reset</button></div>
+    <p class="small" id="m5" style="margin:0;min-height:22px;text-align:center"></p>
+  </div>
+  <div id="n5b"></div>
+  <div class="takeaway">Classification = <b>score</b> (weighted sum) → <b>squash</b> with sigmoid → probability. The boundary is where the score is 0, a straight line. Loss = −ln(prob. of the truth). Gradient = <b>error × input</b>.</div>
+  <div class="check" id="q5"></div>
+</section>
+
+<!-- ============ §6 ============ -->
+<section class="sec" id="s6" data-title="One neuron">
+  <div class="kick">§6 · The neuron <span class="tag model">model</span></div>
+  <h2>You just built a neuron</h2>
+  <p>A <b>neuron</b>, the building block of every neural network, does exactly what §5 did. The name comes from brain cells, but in practice it's just this formula:</p>
+  <div class="M">a = f\Big(\sum_j \pw{w_j}\,\bl{x_j} + \pw{b}\Big)</div>
+  <div class="def">Multiply each input by its weight, add them up with the bias (that's <span class="m">z</span>), then pass <span class="m">z</span> through an <b>activation function</b> <span class="m">f</span>. The result <span class="m">a</span> is the neuron's output, its <b>activation</b>. §5 used <span class="m">f = \sigma</span>.</div>
+  <div class="card">
+    <div class="lbl">Live: the point you picked in §5</div>
+    <svg id="neuron" viewBox="0 0 320 170" width="100%" style="max-width:320px;display:block;margin:0 auto"></svg>
+    <div class="M" id="f6"></div>
+  </div>
+  <h3>Activation functions, and why their slope matters</h3>
+  <p>Different bends get used. The <span class="c-orange">dashed orange</span> line is each one's slope <span class="m">f'(z)</span>. You'll see in §8 and §10 that this slope decides how much "blame" can flow back through the neuron during learning.</p>
+  <div class="card">
+    <div class="chips" id="actchips"></div>
+    <canvas id="c6"></canvas>
+    <div class="M" id="f6b" style="min-height:44px"></div>
+    <p class="small" id="m6" style="margin:0;min-height:62px"></p>
+  </div>
+  <div id="n6"></div>
+  <div class="takeaway">Neuron = <b>weighted sum + bias, then a bend</b>: <span class="m">a = f(\pw{\mathbf w}\cdot\bl{\mathbf x} + \pw{b})</span>. The bend's slope <span class="m">f'</span> controls how learning signals pass through it.</div>
+  <div class="check" id="q6"></div>
+</section>
+
+<!-- ============ §7 ============ -->
+<section class="sec" id="s7" data-title="Feature engineering">
+  <div class="kick">§7 · When one line isn't enough <span class="tag model">model</span></div>
+  <h2>Bend the data, not the line</h2>
+  <p>One neuron draws one straight boundary. What about a <b>circle</b> (blue inside, red outside), or <b>XOR</b> (blue where <span class="m">x_1</span> and <span class="m">x_2</span> have the same sign)? No straight line can separate those.</p>
+  <div class="predict" id="p7"></div>
+  <div class="card">
+    <div class="chips" id="fe7"></div>
+    <canvas id="c7"></canvas>
+    <div class="row" style="justify-content:center"><button class="btn" id="ft7">+ add feature</button><button class="btn primary" id="tr7">▶ Train one neuron</button></div>
+    <p class="msg" id="m7"></p>
+    <div class="M" id="f7" style="min-height:50px"></div>
+    <div class="lbl" id="fv7l" style="margin-top:6px"></div>
+    <canvas id="c7v"></canvas>
+  </div>
+  <h3>Why the new feature works</h3>
+  <p>Give the neuron a third input, <span class="m">\bl{r^2} = \bl{x_1^2 + x_2^2}</span>, the squared distance from the centre. Its score becomes</p>
+  <div class="M">z = \pw{w_1}\bl{x_1} + \pw{w_2}\bl{x_2} + \pw{w_3}\,\bl{(x_1^2 + x_2^2)} + \pw{b}</div>
+  <p>Suppose training finds <span class="m">w_1 \approx w_2 \approx 0</span>. The boundary <span class="m">z = 0</span> is then</p>
+  <div class="M">\pw{w_3}(x_1^2 + x_2^2) + \pw{b} = 0 \;\;\Longrightarrow\;\; x_1^2 + x_2^2 = -\frac{\pw{b}}{\pw{w_3}}</div>
+  <p>That's the equation of a <b>circle</b> with radius <span class="m">\sqrt{-b/w_3}</span>. The neuron still makes a straight cut, but in the new feature (inside points have small <span class="m">r^2</span>, outside points large). Back in the original picture, that straight cut is a circle.</p>
+  <div class="def"><b>Feature</b>: an input number given to the model. <b>Feature engineering</b>: a <i>person</i> inventing new features (like <span class="m">x_1^2 + x_2^2</span> for circles, or <span class="m">x_1 x_2</span> for XOR) so a simple model can solve the problem. This is how much of <b>classical ML</b> works.</div>
+  <div id="n7"></div>
+  <div class="takeaway">A <b>straight cut in a clever feature</b> = a <b>curved boundary</b> in the original picture. The catch: a human had to guess the right feature. For photos of clothes, nobody knows what to write down.</div>
+  <div class="check" id="q7"></div>
+</section>
+
+<!-- ============ §8 ============ -->
+<section class="sec" id="s8" data-title="Hinges">
+  <div class="kick">§8 · How a network learns features (1D) <span class="tag model">model</span><span class="tag opt">optimizer</span></div>
+  <h2>A ReLU neuron is a hinge</h2>
+  <p>§7 needed a human to invent <span class="m">x_1^2 + x_2^2</span>. A neural network builds its own features instead. To see <i>how</i>, start with one input <span class="m">\bl{x}</span>, so everything fits on one graph.</p>
+  <h3>One neuron = one hinge</h3>
+  <div class="M">h = \text{ReLU}(\pw{w}\,\bl{x} + \pw{b}) = \max(0,\ \pw{w}\,\bl{x} + \pw{b})</div>
+  <p>This is flat at 0 on one side and a straight ramp on the other, like a piece of card folded once. The fold, or <b>hinge</b>, is where the inside becomes zero:</p>
+  <div class="M">\pw{w}\,x + \pw{b} = 0 \quad\Longrightarrow\quad x^{*} = -\frac{\pw{b}}{\pw{w}}</div>
+  <div class="card">
+    <div class="lbl">Move the hinge</div>
+    <canvas id="c8a"></canvas>
+    <div class="sl"><span class="m">\pw{w}</span><input type="range" id="w8a" min="-200" max="200" value="100"><output id="w8ao"></output></div>
+    <div class="sl"><span class="m">\pw{b}</span><input type="range" id="b8a" min="-300" max="300" value="-50"><output id="b8ao"></output></div>
+    <div class="M" id="f8a"></div>
+    <p class="small muted" style="margin:0"><span class="m">\pw{b}</span> slides the hinge left and right. <span class="m">\pw{w}</span> sets the ramp's steepness, and its sign sets which way the ramp faces.</p>
+  </div>
+  <h3>Add hinges to build any bendy shape</h3>
+  <p>A layer of several neurons gives several hinges. The output neuron adds them up, each scaled by an output weight <span class="m">\pw{v_j}</span>:</p>
+  <div class="M">\hat y = \pw{v_1}h_1 + \pw{v_2}h_2 + \pw{v_3}h_3 + \pw{c}</div>
+  <div class="steps-math"><div class="small muted">Example: two hinges, both at 0, make a V</div>
+    <div class="M">|x| = \text{ReLU}(x) + \text{ReLU}(-x)</div>
+    <p class="small" style="margin:0">Each extra hinge adds one corner. With enough hinges you can trace any curve as a chain of straight pieces.</p></div>
+  <div class="why"><b>Why the bend is essential.</b> Remove ReLU and each "neuron" is just a straight line <span class="m">w_j x + b_j</span>. Adding straight lines gives a straight line:
+    <div class="M">\pw{v_1}(\pw{w_1}x + \pw{b_1}) + \pw{v_2}(\pw{w_2}x + \pw{b_2}) + \pw{c} = (\pw{v_1}\pw{w_1} + \pw{v_2}\pw{w_2})\,x + (\dots)</div>
+    No corners, however many you stack. The hinge is what makes extra neurons useful.</div>
+
+  <h3>Watch training move the hinges</h3>
+  <p>The target is a curved valley (white dots). The network has <b>3 hinge neurons</b>, and all three start bunched on the right. Each coloured thin line is one neuron's contribution <span class="m">\pw{v_j}h_j</span>, and the dashed lines mark the hinges. The <span class="c-yellow">yellow</span> curve is their sum, the network's output. Loss: MSE, optimizer: plain gradient descent, as in §4.</p>
+  <div class="card">
+    <canvas id="c8" class="draw"></canvas>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="t8">▶ Train</button><button class="btn" id="s8">Step ×100</button><button class="btn" id="r8">Reset</button></div>
+    <p class="small" id="m8" style="margin:0;text-align:center;min-height:22px"></p>
+    <table class="tbl" id="tb8"></table>
+  </div>
+  <p>Nobody told the hinges where to go. They spread out to where the curve bends, because that's what lowers the loss. Each hinge has become a feature: "how far past this point are you?". So how does gradient descent know which way to push each one?</p>
+
+  <h3>The blame for one neuron, in four factors</h3>
+  <p>Take one data point, with error <span class="m">e = \hat y - y</span> and loss <span class="m">\og{L} = e^2</span>. Follow the chain rule from the loss back to neuron <span class="m">j</span>'s weight:</p>
+  <div class="M">\og{\frac{\partial L}{\partial w_j}} = \og{2e}\cdot\pw{v_j}\cdot f'(z_j)\cdot\bl{x}</div>
+  <div class="def">
+    <span class="m">\og{2e}</span>: <b>how wrong</b> the output was at this point, and in which direction.<br>
+    <span class="m">\pw{v_j}</span>: <b>how much the output listens</b> to neuron <span class="m">j</span>.<br>
+    <span class="m">f'(z_j)</span>: <b>was neuron j switched on</b> for this point? ReLU's slope (§6) is 1 if on and 0 if off.<br>
+    <span class="m">\bl{x}</span>: the <b>input</b>, since <span class="m">w_j</span> multiplied it.<br>
+    For the bias the last factor is just 1: <span class="m">\og{\partial L/\partial b_j} = \og{2e}\cdot\pw{v_j}\cdot f'(z_j)</span>.</div>
+  <details class="show"><summary>Show where those factors come from (chain rule)</summary>
+    <div class="M">\begin{aligned} z_j &= \pw{w_j}x + \pw{b_j}\\ h_j &= f(z_j)\\ \hat y &= \textstyle\sum_k \pw{v_k} h_k + \pw{c}\\[6pt] \frac{\partial L}{\partial w_j} &= \underbrace{\frac{\partial L}{\partial \hat y}}_{2e}\cdot\underbrace{\frac{\partial \hat y}{\partial h_j}}_{v_j}\cdot\underbrace{\frac{\partial h_j}{\partial z_j}}_{f'(z_j)}\cdot\underbrace{\frac{\partial z_j}{\partial w_j}}_{x}\end{aligned}</div>
+    <p class="small" style="margin:0">Each link in the chain is one simple derivative. Multiply them together. That is all <b>backpropagation</b> is (§10).</p></details>
+  <div class="takeaway" style="margin-top:12px">A neuron is only blamed for points where it was <b>on</b>. For every other point its gradient is exactly 0, so off neurons don't move.</div>
+  <div class="card">
+    <div class="lbl">Tap a white dot in the graph above to inspect its blame</div>
+    <div class="M" id="f8"></div>
+    <table class="tbl" id="tb8b"></table>
+    <p class="small" style="margin:6px 0 0">Training adds up these per-point blames over all 25 points (and divides by 25), then steps every weight against the total. Points the curve misses pull on whichever hinges are switched on near them.</p>
+  </div>
+  <div id="n8a"></div>
+  <div id="n8b"></div>
+  <div class="ode">A neuron that is off for <b>every</b> data point has all-zero gradients, so it never moves again. This is a <b>dead ReLU</b>. It's one reason networks start from random weights: so the neurons begin switched on in different places.</div>
+  <div class="takeaway">A ReLU neuron is a <b>hinge</b>. The network's output is a <b>sum of hinges</b>. Training slides and tilts each hinge, pulled by the errors of the points where it's switched on. That's what "the network learned a feature" means.</div>
+  <div class="check" id="q8"></div>
+</section>
+
+<!-- ============ §9 ============ -->
+<section class="sec" id="s9" data-title="Creases">
+  <div class="kick">§9 · The same idea in 2D: layers <span class="tag model">model</span></div>
+  <h2>Hinges become creases</h2>
+  <p>With two inputs, a ReLU neuron <span class="m">h = \text{ReLU}(\pw{w_1}x_1 + \pw{w_2}x_2 + \pw{b})</span> is a flat sheet <b>folded along a straight crease</b>, the line where <span class="m">\pw{w_1}x_1 + \pw{w_2}x_2 + \pw{b} = 0</span> (the same line as §5). It's 0 on one side of the crease and rises like a ramp on the other.</p>
+  <p>Below, a network with 4 such neurons (a <b>hidden layer</b> of 4) feeds one output neuron with a sigmoid, like §5. Its job: the circle from §7, <b>with only <span class="m">x_1</span> and <span class="m">x_2</span> as inputs</b>, no hand-made feature.</p>
+  <div class="card">
+    <div class="lbl">2 inputs → 4 ReLU neurons → 1 output · dashed = creases, yellow = boundary</div>
+    <canvas id="c9"></canvas>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="t9">▶ Train</button><button class="btn" id="s9b">Step ×50</button><button class="btn" id="r9">New random start</button></div>
+    <p class="small" id="m9" style="margin:0;text-align:center;min-height:22px"></p>
+    <div class="lbl" style="margin-top:10px">Each neuron's ramp: dark where it's off, brighter the further past its crease</div>
+    <div class="mini" id="mini9"></div>
+    <p class="small" id="m9b" style="margin:10px 0 0;min-height:66px"></p>
+  </div>
+  <h3>The same thing, written with matrices</h3>
+  <p>Stack the four neurons' weights as the rows of a matrix <span class="m">\pw{W_1}</span>. Then the whole layer is one line of algebra:</p>
+  <div class="M">\begin{aligned}\mathbf h &= \text{ReLU}(\pw{W_1}\,\bl{\mathbf x} + \pw{\mathbf b_1}) &&\text{(4 numbers)}\\ z &= \pw{W_2}\,\mathbf h + \pw{b_2}, \quad p = \sigma(z) &&\text{(1 number)}\end{aligned}</div>
+  <div class="def"><span class="m">\pw{W_1}</span> is <span class="m">4\times 2</span>: row <span class="m">j</span> holds neuron <span class="m">j</span>'s two weights. Multiplying by <span class="m">\bl{\mathbf x}</span> (<span class="m">2\times1</span>) gives all four weighted sums at once (<span class="m">4\times1</span>). <span class="m">\pw{W_2}</span> is <span class="m">1\times4</span>, the output weights <span class="m">v_j</span>. ReLU is applied to each of the 4 numbers separately.</div>
+  <p class="small">These are the numbers your browser just learned (press Train first):</p>
+  <div class="M" id="f9"></div>
+  <div class="why"><b>Why stacking needs the bend (matrix version).</b> Without ReLU,
+    <div class="M">\pw{W_2}(\pw{W_1}\bl{\mathbf x} + \pw{\mathbf b_1}) + \pw{b_2} = \underbrace{(\pw{W_2W_1})}_{1\times2}\bl{\mathbf x} + \underbrace{(\pw{W_2}\pw{\mathbf b_1} + \pw{b_2})}_{\text{a number}}</div>
+    which is a single neuron, so a single straight line. Ten such layers would still collapse into one.</div>
+  <div class="takeaway">In 2D each ReLU neuron is a <b>crease</b>. A layer of them is <span class="m">\text{ReLU}(\pw{W}\bl{\mathbf x} + \pw{\mathbf b})</span>. Gradient descent moves the creases until the combined shape fits the data. <b>Deep learning = layers that learn their own features</b>, using the same loss and gradient descent as §2–§4.</div>
+  <div id="n9"></div>
+  <div class="check" id="q9"></div>
+</section>
+
+<!-- ============ §10 ============ -->
+<section class="sec" id="s10" data-title="Backprop">
+  <div class="kick">§10 · Backpropagation and the training loop <span class="tag opt">optimizer</span></div>
+  <h2>Blame flows backwards</h2>
+  <p>In §8 you got a hidden neuron's gradient by chaining four simple derivatives together. A deeper network just has longer chains. <b>Backpropagation</b> ("backprop") is the efficient way to get <i>every</i> weight's gradient in one go: start at the loss and walk backwards through the network, one layer at a time.</p>
+  <div class="why"><b>Why backwards?</b> Every weight's chain starts with the same first link, <span class="m">\og{\partial L/\partial \hat y}</span>, and neighbouring weights share most of their links. Walking backwards computes each shared piece <b>once</b> and hands it to the layer before. So one backward pass costs about the same as one forward pass, whether the network has 17 weights or your CNN's 10,330.</div>
+  <h3>The smallest chain, by hand</h3>
+  <p>One input, two weights, no activation (so the numbers stay simple), one training example with target <span class="m">y = 2</span>:</p>
+  <div class="M">\bl{x}=1.5 \;\xrightarrow{\;\times\pw{w_1}\;}\; h \;\xrightarrow{\;\times\pw{w_2}\;}\; \hat y \;\longrightarrow\; \og{L} = (\hat y - 2)^2</div>
+  <div class="card">
+    <svg id="chain" viewBox="0 0 320 150" width="100%" style="max-width:320px;display:block;margin:0 auto"></svg>
+    <div class="flowbtns">
+      <button class="btn primary" data-ph="0">① Forward</button>
+      <button class="btn" data-ph="1">② Loss</button>
+      <button class="btn warm" data-ph="2">③ Backprop</button>
+      <button class="btn" data-ph="3" style="border-color:var(--blue)">④ Optimizer step</button>
+    </div>
+    <div class="explain" id="chmsg" style="min-height:150px"></div>
+    <div class="row" style="justify-content:center"><button class="btn" id="chx20">Repeat ① → ④ ×20</button><button class="btn" id="chreset">Reset</button></div>
+    <canvas id="chcv"></canvas>
+  </div>
+  <p>Notice <span class="m">\og{\partial L/\partial h}</span> in step ③: it's computed once, then reused to get <span class="m">\og{\partial L/\partial w_1}</span>. That reuse is the whole trick.</p>
+  <h3>The general rule</h3>
+  <p>Call <span class="m">\og{\delta_j} = \og{\partial L/\partial z_j}</span> the <b>blame</b> arriving at neuron <span class="m">j</span>'s weighted sum. Then backprop is two lines, applied layer by layer from the output back:</p>
+  <div class="M">\begin{aligned} \og{\delta_j} &= f'(z_j)\,\sum_k \pw{W_{kj}}\,\og{\delta_k}\\[4pt] \og{\frac{\partial L}{\partial W_{ji}}} &= \og{\delta_j}\cdot a_i \end{aligned}</div>
+  <div class="def">Line 1: a neuron's blame = the blame of the neurons it feeds, sent back through the connecting weights, then gated by its own slope (0 if it was an off ReLU). Line 2: a weight's gradient = blame at its output end × the activity <span class="m">a_i</span> at its input end. In §8 these were exactly <span class="m">\og{\delta_j} = 2e\cdot\pw{v_j}\cdot f'(z_j)</span> and <span class="m">a_i = \bl{x}</span>.</div>
+  <div class="vs">
+    <div style="border-color:var(--orange)"><b class="c-orange">③ Backprop</b><code>loss.backward()</code><br>Computes <span class="m">\og{\partial L/\partial w}</span> for every weight with the chain rule. <b>Changes no weights.</b></div>
+    <div style="border-color:var(--blue)"><b class="c-blue">④ Optimizer</b><code>optimizer.step()</code><br>Uses those gradients: <span class="m">w \leftarrow w - \eta\,\og{\partial L/\partial w}</span>. <b>Computes no gradients.</b></div>
+  </div>
+  <div id="o10"></div>
+  <p>Your Phase 0 loop is exactly this, with 10,330 weights and batches of 64 images:</p>
+  <pre>for x, y in train_loader:
+    logits = model(x)            # ① forward
+    loss = loss_fn(logits, y)    # ② loss
+    optimizer.zero_grad()        #   wipe old gradients
+    loss.backward()              # ③ backprop
+    optimizer.step()             # ④ update</pre>
+  <p class="small muted">Why <code>zero_grad()</code>? PyTorch <i>adds</i> each new gradient to whatever is already stored, so the old ones must be cleared first.</p>
+  <div class="takeaway"><b>Backprop</b> = the chain rule, run backwards, giving every weight its gradient. The <b>optimizer</b> then steps every weight downhill. These are two separate jobs, repeated for every batch.</div>
+  <div class="check" id="q10"></div>
+</section>
+
+<!-- ============ §11 ============ -->
+<section class="sec" id="s11" data-title="Playground">
+  <div class="kick">§11 · Playground</div>
+  <h2>Train a real network, live</h2>
+  <p>Everything you've met, in one place: pick the data, the features (§7), the number of layers and neurons (§8–§9), the activation (§6) and the learning rate (§4), then watch it train. The network and its backprop are real, written in plain JavaScript.</p>
+  <div class="def"><b>Training set</b> (filled dots): the points the network learns from. <b>Test set</b> (hollow rings): points it never learns from, used only to check it. <b>Epoch</b>: one pass through all the training points. <b>Mini-batch</b>: instead of averaging the blame over all 100 training points before each step, average over 10 at a time. That's noisier, but 10 steps per epoch instead of 1. <b>Overfitting</b>: the training loss keeps falling while the test loss rises, because the network is memorising noise instead of the pattern.</div>
+  <div class="card" id="pg">
+    <canvas id="pgcv"></canvas>
+    <div class="legend"><span><i style="background:var(--blue);height:8px;width:8px;border-radius:50%"></i>blue class</span><span><i style="background:var(--red);height:8px;width:8px;border-radius:50%"></i>red class</span><span>● train · ○ test</span></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" id="pgplay">▶ Play</button><button class="btn" id="pgstep">Step</button><button class="btn" id="pgreset">Reset weights</button><button class="btn" id="pgdata">New data</button>
+    </div>
+    <div class="stats">
+      <div><b id="pgep">0</b><span>epoch</span></div>
+      <div><b id="pgtr" class="c-orange">—</b><span>train loss</span></div>
+      <div><b id="pgte">—</b><span>test loss</span></div>
+      <div><b id="pgacc" class="c-green">—</b><span>test acc</span></div>
+    </div>
+    <div class="ctl">
+      <span>Data</span><div class="chips" id="pgds"></div>
+      <span>Features</span><div class="chips" id="pgft"></div>
+      <span>Hidden layers</span><div class="stepper"><button class="btn" id="hlm">−</button><b id="hl">1</b><button class="btn" id="hlp">+</button></div>
+      <span>Neurons / layer</span><div class="stepper"><button class="btn" id="nnm">−</button><b id="nn">4</b><button class="btn" id="nnp">+</button></div>
+      <span>Activation</span><div class="seg" id="pgact"><button data-a="relu">ReLU</button><button data-a="tanh" class="sel">tanh</button><button data-a="sigmoid">sigmoid</button></div>
+      <span>Learning rate η</span><div class="chips" id="pglr"></div>
+      <span>Noise</span><div class="sl" style="grid-template-columns:1fr auto"><input type="range" id="pgnoise" min="0" max="50" value="0"><output id="pgno">0%</output></div>
+    </div>
+    <div class="lbl" style="margin-top:14px">Loss over time</div>
+    <canvas id="pglc"></canvas>
+    <div class="legend"><span><i style="background:var(--orange)"></i>train</span><span><i style="background:#c8ced8"></i>test</span></div>
+    <div class="lbl" style="margin-top:10px">The network · line thickness = weight size, colour = sign</div>
+    <canvas id="pgnet"></canvas>
+    <p class="small muted" style="margin:6px 0 0">Each square shows what that neuron responds to across the plane: a crease or a combination of creases, as in §9.</p>
+  </div>
+  <h3>Try this</h3>
+  <div id="tries"></div>
+  <div class="takeaway">Same recipe at every scale: <span class="c-purple">model</span> + <span class="c-orange">loss</span> + <span class="c-blue">optimizer</span>. Judge it on the <b>test</b> set, never on the training set.</div>
+  <div class="check" id="q11"></div>
+</section>
+
+<!-- ============ §12 ============ -->
+<section class="sec" id="s12" data-title="Towards CNNs">
+  <div class="kick">§12 · Towards images</div>
+  <h2>Images need a smarter layer</h2>
+  <p>An image is just numbers: a 28 × 28 grayscale picture is 784 brightness values. You could flatten it into a list and feed it to the networks above.</p>
+  <div class="card">
+    <div class="row" style="justify-content:center;gap:14px;flex-wrap:nowrap">
+      <canvas id="bimg" style="max-width:140px;image-rendering:pixelated"></canvas>
+      <div class="small" style="min-width:0">One FashionMNIST-style image <span class="illus">hand-drawn</span><br><span class="mono c-blue">28 × 28 = 784</span> inputs</div>
+    </div>
+    <div class="sl" style="margin-top:12px"><span class="small">neurons</span><input type="range" id="bn" min="10" max="500" step="10" value="100"><output id="bno"></output></div>
+    <div class="M" id="bcount"></div>
+  </div>
+  <p><b>Problem 1: too many weights.</b> A fully connected layer (§9's <span class="m">\pw{W_1}</span>, just bigger) gives every pixel its own weight into every neuron. More weights need more data to learn well.</p>
+  <p><b>Problem 2: it ignores neighbours.</b> A fully connected layer has no idea which pixels sit next to each other. Shuffle the pixels in a fixed order and, to that layer, nothing has changed. To you, the image is gone.</p>
+  <div class="card">
+    <canvas id="bshuf" style="max-width:200px;image-rendering:pixelated"></canvas>
+    <div class="row" style="justify-content:center"><button class="btn" id="bshbtn">Shuffle the pixels</button></div>
+  </div>
+  <h3>The fix: one small filter, reused everywhere</h3>
+  <p>A <b>convolution</b> slides a small grid of weights, a <b>filter</b> <span class="m">\pw{K}</span> (3 × 3 = 9 weights), across the image. At each position it does what every neuron does, a weighted sum plus a bias, but only over the 9 neighbouring pixels:</p>
+  <div class="M">\text{out}[i,j] = \sum_{a=0}^{2}\sum_{c=0}^{2} \pw{K[a,c]}\;\bl{x[i+a,\ j+c]} + \pw{b}</div>
+  <div class="def">The same 9 weights are used at <b>every</b> <span class="m">(i, j)</span>, called <b>weight sharing</b>, which fixes problem 1. Each output only looks at a pixel's neighbours, which fixes problem 2. Your conv1 has 16 filters: <span class="m">16\times(9 + 1) = 160</span> parameters, against <span class="m">784\times100 + 100 = 78{,}500</span> for a fully connected layer with 100 neurons. After the convolution comes ReLU: each filter's output goes through the same hinge you met in §8.</div>
+  <div class="card">
+    <canvas id="bconv"></canvas>
+    <p class="small muted" style="margin:6px 0 0">One 3 × 3 filter, the same 9 weights at every position. Edge-detecting weights shown <span class="illus">illustrative</span></p>
+  </div>
+  <div class="takeaway">A CNN is the same recipe (weighted sums, ReLU hinges, a loss, backprop, an optimizer) with one change: small filters whose weights are <b>shared</b> across the image. Everything else on this page carries over.</div>
+  <div class="check" id="q12"></div>
+  <a class="bigbtn" href="phase0-cnn-explorer.html">Next: the CNN you built →</a>
+</section>
+
+<footer>Part of learning-hub · every trained number on this page is computed live in your browser.</footer>
+</main>
+<div id="pop" hidden></div>
+
+<script>
+/*@kit.js*/
+
+/* ===================== Shared data: 24 spring measurements ===================== */
+const SPR = (() => { const r = mulberry32(7); return Array.from({ length: 24 }, () => { const x = .15 + r() * 3.4; return { x, y: .6 * x + .6 + gauss(r) * .35 }; }); })();
+const mseOf = (pts, w, b) => pts.reduce((s, p) => s + (w * p.x + b - p.y) ** 2, 0) / pts.length;
+const gradOf = (pts, w, b) => { let gw = 0, gb = 0; for (const p of pts) { const e = w * p.x + b - p.y; gw += 2 * e * p.x; gb += 2 * e; } return [gw / pts.length, gb / pts.length]; };
+const SPR_OPT = (() => { const n = SPR.length; let sx = 0, sy = 0, sxx = 0, sxy = 0; for (const p of SPR) { sx += p.x; sy += p.y; sxx += p.x * p.x; sxy += p.x * p.y; } const w = (n * sxy - sx * sy) / (n * sxx - sx * sx); return [w, (sy - w * sx) / n]; })();
+/* Hessian of the MSE is constant: H = (2/N)[[Σx², Σx],[Σx, N]]; its eigenvalues set the stable step size. */
+const SPR_EIG = (() => { const n = SPR.length; let sx = 0, sxx = 0; for (const p of SPR) { sx += p.x; sxx += p.x * p.x; } const a = 2 * sxx / n, c = 2, bb = 2 * sx / n, tr = a + c, det = a * c - bb * bb, d = Math.sqrt(tr * tr / 4 - det); return [tr / 2 + d, tr / 2 - d]; })();
+
+/* scatter plot of the spring data: x 0..3.75 N, y 0..2.9 cm, 80 px per unit */
+const PX = 72, sx2 = x => 26 + x * PX, sy2 = y => 232 - y * PX;
+function drawSpring(c, w, b, o = {}) {
+  c.fillStyle = HEX.panel; c.fillRect(0, 0, 320, 256);
+  c.strokeStyle = HEX.line; c.lineWidth = 1; c.beginPath(); c.moveTo(26, 232.5); c.lineTo(318, 232.5); c.moveTo(26.5, 4); c.lineTo(26.5, 232); c.stroke();
+  c.font = '10px sans-serif'; c.fillStyle = HEX.muted; c.textAlign = 'center'; for (const x of [1, 2, 3]) c.fillText(x, sx2(x), 244); c.fillText('force x (N)', 170, 254);
+  c.textAlign = 'right'; for (const y of [1, 2]) c.fillText(y, 22, sy2(y) + 3);
+  c.save(); c.translate(9, 120); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.fillText('stretch y (cm)', 0, 0); c.restore();
+  c.save(); c.beginPath(); c.rect(27, 0, 293, 232); c.clip();
+  if (o.squares) for (const p of SPR) { const e = w * p.x + b - p.y, s = Math.abs(e) * PX; c.fillStyle = 'rgba(255,159,67,.16)'; c.fillRect(sx2(p.x), Math.min(sy2(p.y), sy2(p.y + e)), e > 0 ? s : -s, s); }
+  if (o.squares || o.resid) for (const p of SPR) { c.strokeStyle = HEX.orange; c.lineWidth = 1.2; c.beginPath(); c.moveTo(sx2(p.x), sy2(p.y)); c.lineTo(sx2(p.x), sy2(w * p.x + b)); c.stroke(); }
+  c.strokeStyle = HEX.purple; c.lineWidth = 2.5; c.beginPath(); c.moveTo(sx2(-.4), sy2(w * -.4 + b)); c.lineTo(sx2(4), sy2(w * 4 + b)); c.stroke();
+  c.restore();
+  for (const p of SPR) { c.fillStyle = HEX.text; c.beginPath(); c.arc(sx2(p.x), sy2(p.y), 3, 0, 7); c.fill(); }
+  if (o.probe != null) { const y = w * o.probe + b; c.setLineDash([3, 3]); c.strokeStyle = HEX.yellow; c.lineWidth = 1; c.beginPath(); c.moveTo(sx2(o.probe), 232); c.lineTo(sx2(o.probe), sy2(y)); c.lineTo(26, sy2(y)); c.stroke(); c.setLineDash([]); c.fillStyle = HEX.yellow; c.beginPath(); c.arc(sx2(o.probe), sy2(y), 5, 0, 7); c.fill(); }
+}
+function knobSliders(prefix, st, draw) {
+  const W = $('#w' + prefix), B = $('#b' + prefix);
+  const sync = () => { W.value = Math.round(clamp(st.w, -1, 2) * 100); B.value = Math.round(clamp(st.b, -1, 3) * 100); $('#w' + prefix + 'o').textContent = fmt(st.w, 2); $('#b' + prefix + 'o').textContent = fmt(st.b, 2); };
+  W.oninput = () => { st.w = W.value / 100; draw(); }; B.oninput = () => { st.b = B.value / 100; draw(); };
+  return sync;
+}
+
+/* ===================== §1 ===================== */
+function s1_init() {
+  const rings = [
+    { k: 'AI', x: 4, y: 4, w: 312, h: 222, col: '#6c7891', t: '<b>Artificial intelligence (AI)</b>: any technique that makes computers do things that seem intelligent, including hand-written rules (a chess program\'s search, for example).' },
+    { k: 'Machine learning', x: 22, y: 34, w: 276, h: 182, col: HEX.blue, t: '<b>Machine learning</b>: AI that learns its rules from examples. Fitting a straight line to data (§2–§4) already counts.' },
+    { k: 'Deep learning', x: 42, y: 70, w: 236, h: 136, col: HEX.purple, t: '<b>Deep learning</b>: machine learning with <i>neural networks</i> of several layers that invent their own features (§8–§9).' },
+    { k: 'CNN', x: 70, y: 112, w: 180, h: 84, col: HEX.yellow, t: '<b>Convolutional neural network (CNN)</b>: deep learning designed for images, using small sliding filters (§12). Your Phase 0 model is one.' },
+  ];
+  const svg = $('#nest');
+  svg.innerHTML = rings.map((r, i) => `<g data-i="${i}" style="cursor:pointer"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${18 - i * 2}" fill="${r.col}" fill-opacity="${.06 + i * .03}" stroke="${r.col}" stroke-width="1.5"/><text x="${r.x + r.w / 2}" y="${r.y + (i === 3 ? 48 : 20)}" text-anchor="middle" fill="${r.col}" font-size="${i === 3 ? 16 : 13}" font-weight="700" font-family="sans-serif">${r.k}</text></g>`).join('');
+  const pick = i => { $('#nestmsg').innerHTML = rings[i].t; $$('#nest rect').forEach((r, j) => r.setAttribute('stroke-width', j === i ? 3.5 : 1.5)); };
+  svg.addEventListener('click', e => { const g = e.target.closest('g'); if (g) pick(+g.dataset.i); });
+  pick(1);
+}
+
+/* ===================== §2 ===================== */
+const S2 = { w: .2, b: 2 };
+function s2_init() {
+  const c = setupCanvas($('#c2'), 320, 256);
+  let sync;
+  const draw = () => { drawSpring(c, S2.w, S2.b, { probe: 2 }); sync(); tex('#f2', `\\hat y = \\pw{${tn(S2.w)}}\\times\\bl{2} + \\pw{${tn(S2.b)}} = \\yl{${tn(S2.w * 2 + S2.b)}}`, true); };
+  sync = knobSliders('2', S2, draw); draw();
+  mcq($('#p2'), { mode: 'predict', q: 'Before touching the sliders: what happens to the line if you <b>increase b</b> and leave w alone?', opts: [
+    { t: 'It slides straight up, keeping the same tilt', ok: true, why: 'b is added to every guess equally, so the whole line shifts up. Only w changes the tilt. Try both sliders and see.' },
+    { t: 'It gets steeper', why: 'Steepness is w, the number multiplying x. b is added the same amount everywhere, so the slope stays the same.' },
+    { t: 'It rotates around the origin', why: 'Rotating is what w does (around the point where x = 0). b shifts.' }] });
+  numq($('#n2'), { q: 'With <span class="m">\\pw{w} = 0.5</span> and <span class="m">\\pw{b} = 1</span>, what does the model predict for a force of <span class="m">\\bl{x} = 3</span>?', answer: 2.5, tol: .001,
+    hint: 'Multiply the force by w, then add b.', solution: '<div class="M">\\hat y = \\pw{0.5}\\times\\bl{3} + \\pw{1} = 1.5 + 1 = 2.5</div>' });
+}
+
+/* ===================== §3 ===================== */
+const S3 = { w: .2, b: 2 };
+function s3_init() {
+  const c = setupCanvas($('#c3'), 320, 256);
+  let sync;
+  const draw = () => { drawSpring(c, S3.w, S3.b, { squares: true }); sync(); const L = mseOf(SPR, S3.w, S3.b), best = mseOf(SPR, ...SPR_OPT);
+    $('#l3').innerHTML = `MSE = <span class="L">${fmt(L, 3)}</span><br><span class="small muted">best possible for these points: ${fmt(best, 3)}</span>`; };
+  sync = knobSliders('3', S3, draw); draw();
+  numq($('#n3'), { q: 'Two points, <span class="m">(1, 2)</span> and <span class="m">(2, 2)</span>. The line is <span class="m">\\pw{w}=1,\\ \\pw{b}=0</span>. What is the MSE?', answer: .5, tol: .001,
+    hint: 'Find ŷ for each point, then the error e = ŷ − y, square each, and average.',
+    solution: '<div class="M">\\begin{aligned}\\hat y_1 &= 1\\cdot 1 + 0 = 1, & e_1 &= 1-2 = -1\\\\ \\hat y_2 &= 1\\cdot 2+0 = 2, & e_2 &= 2-2 = 0\\\\ \\og{L} &= \\tfrac{(-1)^2 + 0^2}{2} = \\og{0.5}\\end{aligned}</div>' });
+}
+
+/* ===================== §4 ===================== */
+const S4A = { w: -.2, b: SPR_OPT[1], lr: .05, path: [] };
+const S4B = { w: -.2, b: 2.4, lr: .05, path: [], running: false };
+const W4 = [-.5, 1.5], B4 = [-1, 2.5];
+let c4a, c4s, c4f, surf4;
+function s4a_draw() {
+  const c = c4a, b = S4A.b, Lw = w => mseOf(SPR, w, b);
+  c.fillStyle = HEX.panel; c.fillRect(0, 0, 320, 190);
+  const X = w => 30 + (w - W4[0]) / (W4[1] - W4[0]) * 284, Lmax = Lw(W4[0]), Y = L => 170 - Math.min(L, Lmax * 1.05) / Lmax * 156;
+  c.strokeStyle = HEX.line; c.lineWidth = 1; c.beginPath(); c.moveTo(30, 170.5); c.lineTo(316, 170.5); c.moveTo(30.5, 6); c.lineTo(30.5, 170); c.stroke();
+  c.font = '10px sans-serif'; c.fillStyle = HEX.muted; c.textAlign = 'center'; for (const w of [0, .5, 1, 1.5]) c.fillText(w, X(w), 182); c.fillText('w →', 300, 164); c.textAlign = 'left'; c.fillText('loss L', 34, 14);
+  c.strokeStyle = HEX.text; c.lineWidth = 2; c.beginPath(); for (let k = 0; k <= 200; k++) { const w = W4[0] + k / 200 * (W4[1] - W4[0]); k ? c.lineTo(X(w), Y(Lw(w))) : c.moveTo(X(w), Y(Lw(w))); } c.stroke();
+  if (S4A.path.length > 1) { c.strokeStyle = 'rgba(255,210,63,.5)'; c.lineWidth = 1; S4A.path.forEach(w => { c.beginPath(); c.arc(X(w), Y(Lw(w)), 2.5, 0, 7); c.stroke(); }); }
+  const w = S4A.w, L = Lw(w), g = gradOf(SPR, w, b)[0];
+  const sc = (W4[1] - W4[0]) / 284, k = g * (1 / (Lmax / 156)) * sc; // slope in px
+  c.strokeStyle = HEX.orange; c.lineWidth = 2; c.beginPath(); c.moveTo(X(w) - 45, Y(L) + 45 * k); c.lineTo(X(w) + 45, Y(L) - 45 * k); c.stroke();
+  c.fillStyle = HEX.yellow; c.beginPath(); c.arc(X(w), Y(L), 6, 0, 7); c.fill();
+  tex('#f4a', `\\pw{w} = ${tn(w, 3)},\\quad \\og{\\tfrac{dL}{dw}} = \\og{${tn(g, 3)}}`, true);
+}
+function s4b_draw() {
+  drawSpring(c4f, S4B.w, S4B.b, { resid: true });
+  const d = c4s; d.drawImage(surf4, 0, 0, 300, 200);
+  const sx = w => (w - W4[0]) / (W4[1] - W4[0]) * 300, sy = b => 200 - (b - B4[0]) / (B4[1] - B4[0]) * 200;
+  d.font = '10px sans-serif'; d.fillStyle = 'rgba(255,255,255,.8)'; d.textAlign = 'left'; d.fillText('w →', 274, 195); d.fillText('↑ b', 4, 12);
+  d.fillStyle = HEX.green; d.beginPath(); d.arc(sx(SPR_OPT[0]), sy(SPR_OPT[1]), 4, 0, 7); d.fill();
+  if (S4B.path.length > 1) { d.strokeStyle = 'rgba(255,210,63,.75)'; d.lineWidth = 1.5; d.beginPath(); S4B.path.forEach(([w, b], i) => i ? d.lineTo(sx(w), sy(b)) : d.moveTo(sx(w), sy(b))); d.stroke(); }
+  const [gw, gb] = gradOf(SPR, S4B.w, S4B.b), bx = clamp(sx(S4B.w), -10, 310), by = clamp(sy(S4B.b), -10, 210);
+  const gl = Math.hypot(gw, gb * 300 / 200 * (W4[1] - W4[0]) / (B4[1] - B4[0])) || 1;
+  if (gl > .02) { const ax = gw / (W4[1] - W4[0]) * 300, ay = -gb / (B4[1] - B4[0]) * 200, al = Math.hypot(ax, ay), s = 34 / al; d.strokeStyle = HEX.orange; d.lineWidth = 2.5; d.beginPath(); d.moveTo(bx, by); d.lineTo(bx + ax * s, by + ay * s); d.stroke(); d.fillStyle = HEX.orange; d.beginPath(); d.arc(bx + ax * s, by + ay * s, 3, 0, 7); d.fill(); }
+  d.fillStyle = HEX.yellow; d.strokeStyle = '#000'; d.beginPath(); d.arc(bx, by, 6, 0, 7); d.fill(); d.stroke();
+  tex('#f4b', `\\pw{w}=${tn(S4B.w, 2)},\\ \\pw{b}=${tn(S4B.b, 2)},\\ \\og{L}=\\og{${tn(mseOf(SPR, S4B.w, S4B.b), 3)}}`, true);
+}
+function s4b_buildSurface() {
+  const N = 300 * DPR, M = 200 * DPR, cv = document.createElement('canvas'); cv.width = N; cv.height = M; const c = cv.getContext('2d'), id = c.createImageData(N, M);
+  const Lmax = Math.log1p(mseOf(SPR, W4[1], B4[1]));
+  for (let j = 0; j < M; j++) for (let i = 0; i < N; i++) {
+    const w = W4[0] + i / N * (W4[1] - W4[0]), b = B4[1] - j / M * (B4[1] - B4[0]), L = mseOf(SPR, w, b), t = Math.min(1, Math.log1p(L) / Lmax);
+    const fr = (Math.sqrt(L) * 5) % 1, line = fr < .05 ? .3 : 0;
+    id.data.set([lerp(10, 74, t) + line * 140, lerp(30, 111, t) + line * 140, lerp(60, 149, t) + line * 120, 255], (j * N + i) * 4);
+  }
+  c.putImageData(id, 0, 0); surf4 = cv;
+}
+function s4b_step() {
+  const [gw, gb] = gradOf(SPR, S4B.w, S4B.b), nw = S4B.w - S4B.lr * gw, nb = S4B.b - S4B.lr * gb;
+  $('#m4b').innerHTML = ''; tex($('#m4b'), `\\pw{w} \\leftarrow ${tn(S4B.w, 3)} - ${S4B.lr}\\times${tn(gw, 3, true)} = ${tn(nw, 3)}`);
+  S4B.w = nw; S4B.b = nb; S4B.path.push([nw, nb]);
+  if (!Number.isFinite(nw) || Math.abs(nw) > 50) { S4B.running = false; $('#run4b').textContent = '▶ Run'; $('#m4b').innerHTML = '<b class="c-red">Blew up:</b> every step overshot further than the last. That step size is above the stability limit (see the box below). Press Reset.'; S4B.w = -.2; S4B.b = 2.4; S4B.path = []; }
+  s4b_draw();
+}
+function s4_init() {
+  c4a = setupCanvas($('#c4a'), 320, 190); c4s = setupCanvas($('#c4s'), 300, 200); c4f = setupCanvas($('#c4f'), 320, 256); s4b_buildSurface();
+  $('#st4a').onclick = () => {
+    const g = gradOf(SPR, S4A.w, S4A.b)[0], nw = S4A.w - .1 * g; S4A.path.push(S4A.w);
+    $('#m4a').innerHTML = `Slope is <b class="c-orange">${fmt(g, 2)}</b> (${g < 0 ? 'negative, so step right' : 'positive, so step left'}): `;
+    const sp = h('span'); $('#m4a').append(sp); tex(sp, `\\pw{w} \\leftarrow ${tn(S4A.w, 3)} - 0.1\\times${tn(g, 2, true)} = ${tn(nw, 3)}`);
+    S4A.w = nw; s4a_draw();
+  };
+  $('#rs4a').onclick = () => { S4A.w = -.2; S4A.path = []; $('#m4a').textContent = 'Each press: measure the slope, then step against it (η = 0.1).'; s4a_draw(); };
+  $('#rs4a').click();
+  $('#st4b').onclick = () => { if (!S4B.path.length) S4B.path = [[S4B.w, S4B.b]]; s4b_step(); };
+  $('#rs4b').onclick = () => { S4B.running = false; $('#run4b').textContent = '▶ Run'; S4B.w = -.2; S4B.b = 2.4; S4B.path = []; $('#m4b').textContent = ''; s4b_draw(); };
+  $('#run4b').onclick = () => {
+    if (S4B.running) { S4B.running = false; $('#run4b').textContent = '▶ Run'; return; }
+    S4B.running = true; $('#run4b').textContent = '⏸ Pause'; if (!S4B.path.length) S4B.path = [[S4B.w, S4B.b]]; let n = 0;
+    const tick = () => { if (!S4B.running) return; s4b_step(); n++; if (n >= 250 || Math.hypot(...gradOf(SPR, S4B.w, S4B.b)) < 2e-3) { S4B.running = false; $('#run4b').textContent = '▶ Run'; const done = h('div', { class: 'c-green' }, `Stopped after ${n} steps.`); $('#m4b').append(done); return; } setTimeout(tick, 45); };
+    tick();
+  };
+  $('#c4s').addEventListener('pointerdown', e => { const p = evPos($('#c4s'), e); S4B.w = W4[0] + p[0] / 300 * (W4[1] - W4[0]); S4B.b = B4[1] - p[1] / 200 * (B4[1] - B4[0]); S4B.path = [[S4B.w, S4B.b]]; s4b_draw(); });
+  const [l1, l2] = SPR_EIG, lim = 2 / l1;
+  for (const [v, l] of [[.01, '0.01 slow'], [.05, '0.05'], [.15, '0.15 zig-zag'], [+(lim * 1.1).toFixed(2), `${(lim * 1.1).toFixed(2)} too big`]]) { const c = h('button', { class: 'chip' + (v === S4B.lr ? ' sel' : '') }, l); c.onclick = () => { S4B.lr = v; $$('#lr4 .chip').forEach(x => x.classList.toggle('sel', x === c)); }; $('#lr4').append(c); }
+  $('#ode4').innerHTML = `You've met this before in differential equations. Let the knobs move continuously, always straight downhill:
+    <div class="M">\\frac{d\\pw{w}}{dt} = -\\og{\\nabla L}(\\pw{w})</div>
+    This is called <b>gradient flow</b>, like a ball sliding down a bowl full of honey. Gradient descent is just <b>forward Euler</b> on that ODE with time step <span class="m">\\eta</span>:
+    <div class="M">\\pw{w}_{k+1} = \\pw{w}_k - \\eta\\,\\og{\\nabla L}(\\pw{w}_k)</div>
+    For a bowl <span class="m">\\og{L} = \\tfrac{1}{2}\\lambda w^2</span> (curvature <span class="m">\\lambda</span>), one step multiplies <span class="m">w</span> by <span class="m">(1-\\eta\\lambda)</span>. That shrinks only if <span class="m">|1-\\eta\\lambda| < 1</span>, i.e.
+    <div class="M">0 < \\eta < \\frac{2}{\\lambda}</div>
+    which is exactly the stability limit of explicit Euler on <span class="m">y' = -\\lambda y</span>. For the spring data the steepest curvature is <span class="m">\\lambda_{\\max} = ${fmt(l1, 2)}</span>, so the limit is <span class="m">\\eta < ${fmt(lim, 3)}</span>. At <span class="m">\\eta = 0.15</span>, <span class="m">1-\\eta\\lambda = ${fmt(1 - .15 * l1, 2)}</span>: negative, so each step flips sign and the path <b>zig-zags</b>. Above the limit it <b>blows up</b>. The gentlest curvature is only <span class="m">\\lambda_{\\min} = ${fmt(l2, 2)}</span>, which is why progress along the long valley floor is so slow.`;
+  renderMath($('#ode4'));
+  numq($('#n4a'), { q: 'One point, <span class="m">(\\bl{x}, y) = (2, 1)</span>, line <span class="m">\\pw{w}=1,\\ \\pw{b}=0</span>. Using <span class="m">\\og{\\tfrac{\\partial L}{\\partial w}} = \\tfrac{2}{N}\\sum e_i x_i</span> with <span class="m">N = 1</span>, what is <span class="m">\\og{\\partial L/\\partial w}</span>?', answer: 4, tol: .001,
+    hint: 'First the guess ŷ = w·x + b, then the error e = ŷ − y, then 2·e·x.',
+    solution: '<div class="M">\\begin{aligned}\\hat y &= 1\\cdot 2 + 0 = 2\\\\ e &= 2 - 1 = 1\\\\ \\og{\\tfrac{\\partial L}{\\partial w}} &= 2\\cdot e\\cdot x = 2\\cdot 1\\cdot 2 = \\og{4}\\end{aligned}</div>Positive, so gradient descent will <b>lower</b> w: the line is too high at x = 2.' });
+  numq($('#n4b'), { q: 'Current knob <span class="m">\\pw{w} = 1.0</span>, gradient <span class="m">\\og{\\partial L/\\partial w} = 2.0</span>, learning rate <span class="m">\\eta = 0.1</span>. What is the new <span class="m">\\pw{w}</span>?', answer: .8, tol: .001,
+    hint: 'w_new = w − η × gradient.', solution: '<div class="M">\\pw{w}_{\\text{new}} = 1.0 - 0.1\\times 2.0 = \\pw{0.8}</div>The gradient was positive (uphill to the right), so w moved left.' });
+  s4a_draw(); s4b_draw();
+}
+
+/* ===================== 2D plot helpers: square plots of the box [-3, 3]² ===================== */
+const sig = z => 1 / (1 + Math.exp(-z));
+const probCol = p => divCol(2 * p - 1, 1.6); // blue = class 1 likely, red = class 0 likely
+const PX2 = (v, size) => (v + 3) / 6 * size, PY2 = (v, size) => (3 - v) / 6 * size;
+function drawHeat(c, size, cells, f) { const s = size / cells; for (let j = 0; j < cells; j++) for (let i = 0; i < cells; i++) { const x = -3 + (i + .5) / cells * 6, y = 3 - (j + .5) / cells * 6; c.fillStyle = probCol(f(x, y)); c.fillRect(i * s, j * s, s + .5, s + .5); } }
+function drawPts(c, size, pts, r = 3.6) {
+  for (const p of pts) {
+    const x = PX2(p.x, size), y = PY2(p.y, size); c.beginPath(); c.arc(x, y, r, 0, 7);
+    if (p.test) { c.strokeStyle = p.c ? '#9ee6f5' : '#ffb0a8'; c.lineWidth = 1.6; c.stroke(); }
+    else { c.fillStyle = p.c ? HEX.blue : HEX.red; c.fill(); c.strokeStyle = '#0b0d12'; c.lineWidth = 1; c.stroke(); }
+  }
+}
+/* straight line a·x + b·y + k = 0 clipped to the box */
+function drawLine(c, size, a, b, k, col, dash, wid = 2) {
+  const pts = [];
+  if (Math.abs(b) > 1e-9) for (const x of [-3, 3]) { const y = -(a * x + k) / b; if (y >= -3 && y <= 3) pts.push([x, y]); }
+  if (Math.abs(a) > 1e-9) for (const y of [-3, 3]) { const x = -(b * y + k) / a; if (x >= -3 && x <= 3) pts.push([x, y]); }
+  if (pts.length < 2) return false;
+  c.strokeStyle = col; c.lineWidth = wid; c.setLineDash(dash || []); c.beginPath(); c.moveTo(PX2(pts[0][0], size), PY2(pts[0][1], size)); c.lineTo(PX2(pts[1][0], size), PY2(pts[1][1], size)); c.stroke(); c.setLineDash([]);
+  return true;
+}
+function drawArrow(c, x1, y1, x2, y2, col, w = 2.5) {
+  const a = Math.atan2(y2 - y1, x2 - x1), L = 9;
+  c.strokeStyle = '#0b0d12'; c.lineWidth = w + 2.5; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+  c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+  c.fillStyle = col; c.beginPath(); c.moveTo(x2, y2); c.lineTo(x2 - L * Math.cos(a - .45), y2 - L * Math.sin(a - .45)); c.lineTo(x2 - L * Math.cos(a + .45), y2 - L * Math.sin(a + .45)); c.closePath(); c.fill();
+}
+
+/* ===================== §5 Logistic regression ===================== */
+const D5 = (() => { const r = mulberry32(11), pts = []; for (let i = 0; i < 30; i++) pts.push({ x: 1 + gauss(r) * .75, y: .8 + gauss(r) * .75, c: 1 }); for (let i = 0; i < 30; i++) pts.push({ x: -.9 + gauss(r) * .75, y: -1 + gauss(r) * .75, c: 0 }); return pts; })();
+const S5 = { w1: -.8, w2: 1.5, b: 1, sel: 30, training: false };
+let c5, c5s;
+const s5z = p => S5.w1 * p.x + S5.w2 * p.y + S5.b;
+function s5_stats() { let L = 0, ok = 0; for (const p of D5) { const q = clamp(sig(s5z(p)), 1e-9, 1 - 1e-9); L -= p.c ? Math.log(q) : Math.log(1 - q); if ((q > .5) === !!p.c) ok++; } return { L: L / D5.length, acc: ok / D5.length }; }
+function s5_draw() {
+  const c = c5; drawHeat(c, 280, 40, (x, y) => sig(S5.w1 * x + S5.w2 * y + S5.b));
+  drawLine(c, 280, S5.w1, S5.w2, S5.b, HEX.yellow);
+  const n2 = S5.w1 ** 2 + S5.w2 ** 2;
+  if (n2 > 1e-6) { // normal vector w, drawn from the boundary point closest to the origin
+    const x0 = -S5.b * S5.w1 / n2, y0 = -S5.b * S5.w2 / n2, n = Math.sqrt(n2), L = .9;
+    if (Math.abs(x0) < 2.6 && Math.abs(y0) < 2.6) drawArrow(c, PX2(x0, 280), PY2(y0, 280), PX2(x0 + S5.w1 / n * L, 280), PY2(y0 + S5.w2 / n * L, 280), HEX.purple);
+  }
+  drawPts(c, 280, D5);
+  const p = D5[S5.sel]; c.strokeStyle = HEX.yellow; c.lineWidth = 2.5; c.beginPath(); c.arc(PX2(p.x, 280), PY2(p.y, 280), 8, 0, 7); c.stroke();
+  for (const [id, k] of [['g51', 'w1'], ['g52', 'w2'], ['g53', 'b']]) { $('#' + id).value = Math.round(clamp(S5[k], -4, 4) * 100); $('#' + id + 'o').textContent = fmt(S5[k], 2); }
+  const z = s5z(p), q = sig(z), y = p.c, Lp = -Math.log(clamp(y ? q : 1 - q, 1e-9, 1)), g1 = (q - y) * p.x;
+  tex('#f5', `\\begin{aligned} z &= \\pw{${tn(S5.w1)}}\\,\\bl{${tn(p.x, 2, true)}} + \\pw{${tn(S5.w2)}}\\,\\bl{${tn(p.y, 2, true)}} + \\pw{${tn(S5.b, 2, true)}} \\\\ &= ${tn(z)}\\\\ p &= \\sigma(${tn(z)}) = \\yl{${tn(q)}} \\quad \\text{(truly ${y ? 'blue' : 'red'}, } y=${y}\\text{)}\\\\ \\og{L} &= -\\ln(${y ? tn(q) : '1 - ' + tn(q)}) = \\og{${tn(Lp)}}\\\\ \\og{\\tfrac{\\partial L}{\\partial w_1}} &= (p-y)\\,x_1 = (${tn(q - y)})(${tn(p.x)}) = \\og{${tn(g1)}}\\end{aligned}`, true);
+  const st = s5_stats(); $('#m5').innerHTML = `whole dataset: loss <b class="c-orange">${fmt(st.L, 3)}</b> · accuracy <b class="c-green">${Math.round(st.acc * 100)}%</b>`;
+  const d = c5s; d.fillStyle = HEX.panel; d.fillRect(0, 0, 320, 120);
+  const X = z => 20 + (clamp(z, -8, 8) + 8) / 16 * 290, Y = v => 104 - v * 90;
+  d.strokeStyle = HEX.line; d.lineWidth = 1; d.beginPath(); d.moveTo(20, 104.5); d.lineTo(310, 104.5); d.moveTo(X(0) + .5, 10); d.lineTo(X(0) + .5, 104); d.stroke();
+  d.setLineDash([3, 3]); d.beginPath(); d.moveTo(20, Y(.5)); d.lineTo(310, Y(.5)); d.stroke(); d.setLineDash([]);
+  d.font = '10px sans-serif'; d.fillStyle = HEX.muted; d.textAlign = 'center'; d.fillText('z →', 300, 116); d.fillText('0', X(0), 116); d.textAlign = 'left'; d.fillText('p = σ(z)', 24, 12); d.fillText('0.5', 22, Y(.5) - 3);
+  d.strokeStyle = HEX.text; d.lineWidth = 2; d.beginPath(); for (let k = 0; k <= 160; k++) { const zz = -8 + k / 10; k ? d.lineTo(X(zz), Y(sig(zz))) : d.moveTo(X(zz), Y(sig(zz))); } d.stroke();
+  for (const q2 of D5) { const z2 = s5z(q2); d.fillStyle = q2.c ? HEX.blue : HEX.red; d.beginPath(); d.arc(X(z2), Y(sig(z2)), 3, 0, 7); d.fill(); }
+  d.strokeStyle = HEX.yellow; d.lineWidth = 2; d.beginPath(); d.arc(X(z), Y(q), 6, 0, 7); d.stroke();
+  s6_draw();
+}
+function s5_init() {
+  c5 = setupCanvas($('#c5'), 280, 280); c5s = setupCanvas($('#c5s'), 320, 120);
+  for (const [id, k] of [['g51', 'w1'], ['g52', 'w2'], ['g53', 'b']]) $('#' + id).oninput = e => { S5[k] = e.target.value / 100; s5_draw(); };
+  $('#c5').addEventListener('pointerdown', e => { const p = evPos($('#c5'), e); let best = 0, bd = 1e9; D5.forEach((q, i) => { const d = Math.hypot(PX2(q.x, 280) - p[0], PY2(q.y, 280) - p[1]); if (d < bd) { bd = d; best = i; } }); S5.sel = best; s5_draw(); });
+  $('#t5').onclick = () => {
+    if (S5.training) return; S5.training = true; let n = 0;
+    const tick = () => { for (let k = 0; k < 3; k++) { let g1 = 0, g2 = 0, gb = 0; for (const p of D5) { const e = sig(s5z(p)) - p.c; g1 += e * p.x; g2 += e * p.y; gb += e; } const m = D5.length, lr = .5; S5.w1 -= lr * g1 / m; S5.w2 -= lr * g2 / m; S5.b -= lr * gb / m; } s5_draw(); if (++n < 80) requestAnimationFrame(tick); else S5.training = false; };
+    tick();
+  };
+  $('#r5').onclick = () => { S5.w1 = -.8; S5.w2 = 1.5; S5.b = 1; s5_draw(); };
+  numq($('#n5a'), { q: 'Same knobs (<span class="m">\\pw{w_1}=-0.8,\\ \\pw{w_2}=1.5,\\ \\pw{b}=1</span>). What is the score <span class="m">z</span> for the point <span class="m">(\\bl{x_1}, \\bl{x_2}) = (2, -1)</span>?', answer: -2.1, tol: .001,
+    hint: 'Multiply each coordinate by its weight, add them, then add b. Watch the signs.',
+    solution: '<div class="M">z = (-0.8)(2) + (1.5)(-1) + 1 = -1.6 - 1.5 + 1 = -2.1</div>Negative score, so <span class="m">p = \\sigma(-2.1) \\approx 0.11</span>: the model says "probably red".' });
+  numq($('#n5b'), { q: 'You know <span class="m">\\sigma(1.7) = 0.85</span>. Without a calculator, what is <span class="m">\\sigma(-1.7)</span>?', answer: .15, tol: .006,
+    hint: 'Use the symmetry of the S-curve: σ(−z) = 1 − σ(z).', solution: '<div class="M">\\sigma(-1.7) = 1 - \\sigma(1.7) = 1 - 0.85 = 0.15</div>Flipping the sign of the score flips "85% blue" into "85% red".' });
+}
+
+/* ===================== §6 One neuron ===================== */
+const ACT6 = {
+  sigmoid: { f: sig, d: z => sig(z) * (1 - sig(z)), tex: "f(z)=\\frac{1}{1+e^{-z}},\\qquad f'(z)=f(z)\\,\\big(1-f(z)\\big)", t: '<b>Sigmoid</b>: squashes to (0, 1). Its slope is at most 0.25 and almost 0 far from the middle, so learning signals that pass back through many sigmoids fade away. That\'s why it\'s mostly used only at the very end, for a probability.' },
+  tanh: { f: Math.tanh, d: z => 1 - Math.tanh(z) ** 2, tex: "f(z)=\\tanh z,\\qquad f'(z)=1-\\tanh^2 z", t: '<b>tanh</b>: squashes to (−1, 1), centred on 0. Slope up to 1 in the middle, but it also flattens out at the edges.' },
+  relu: { f: z => Math.max(0, z), d: z => z > 0 ? 1 : 0, tex: "f(z)=\\max(0,z),\\qquad f'(z)=\\begin{cases}1 & z>0\\\\ 0 & z<0\\end{cases}", t: '<b>ReLU</b> ("rectified linear unit"): negatives become 0, positives pass straight through. Its slope is exactly <b>1 when the neuron is on</b> and <b>0 when it\'s off</b>, an on/off gate for learning signals (§8). It\'s the default in modern networks, including your CNN.' },
+  step: { f: z => z >= 0 ? 1 : 0, d: z => 0, tex: "f(z)=\\begin{cases}1 & z\\ge 0\\\\ 0 & z<0\\end{cases},\\qquad f'(z)=0", t: '<b>Step</b>: the 1950s "perceptron". Its slope is 0 everywhere (apart from the jump), so gradient descent gets no signal at all and can\'t learn. That\'s why smooth or piecewise-linear bends replaced it.' },
+};
+let act6 = 'relu', c6;
+function s6_draw() {
+  if (!c6) return;
+  const p = D5[S5.sel], z = s5z(p), q = sig(z), n = v => fmt(v, 2);
+  $('#neuron').innerHTML = `
+    <defs><marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#98a2b3"/></marker></defs>
+    <g font-family="ui-monospace,Menlo,monospace" font-size="11" text-anchor="middle">
+      <circle cx="26" cy="40" r="20" fill="#16232b" stroke="#58c4dd"/><text x="26" y="44" fill="#58c4dd">${n(p.x)}</text><text x="26" y="74" fill="#98a2b3" font-size="10">x₁</text>
+      <circle cx="26" cy="122" r="20" fill="#16232b" stroke="#58c4dd"/><text x="26" y="126" fill="#58c4dd">${n(p.y)}</text><text x="26" y="156" fill="#98a2b3" font-size="10">x₂</text>
+      <line x1="46" y1="44" x2="130" y2="76" stroke="#b48ef0" stroke-width="${1 + Math.min(4, Math.abs(S5.w1))}" marker-end="url(#ah6)"/>
+      <line x1="46" y1="118" x2="130" y2="88" stroke="#b48ef0" stroke-width="${1 + Math.min(4, Math.abs(S5.w2))}" marker-end="url(#ah6)"/>
+      <text x="84" y="48" fill="#b48ef0">×${n(S5.w1)}</text><text x="84" y="126" fill="#b48ef0">×${n(S5.w2)}</text>
+      <circle cx="152" cy="82" r="22" fill="#1b202b" stroke="#e7eaf0"/><text x="152" y="88" fill="#e7eaf0" font-size="18">Σ</text>
+      <text x="152" y="124" fill="#b48ef0">+ b ${n(S5.b)}</text>
+      <line x1="174" y1="82" x2="208" y2="82" stroke="#98a2b3" marker-end="url(#ah6)"/><text x="190" y="70" font-size="10" fill="${z >= 0 ? '#58c4dd' : '#fc6255'}">${n(z)}</text>
+      <rect x="210" y="62" width="40" height="40" rx="8" fill="#1b202b" stroke="#e7eaf0"/><text x="230" y="87" fill="#e7eaf0" font-size="15">σ</text>
+      <line x1="250" y1="82" x2="276" y2="82" stroke="#98a2b3" marker-end="url(#ah6)"/>
+      <circle cx="296" cy="82" r="20" fill="#2a250c" stroke="#ffd23f"/><text x="296" y="86" fill="#ffd23f">${fmt(q, 2)}</text><text x="296" y="116" fill="#98a2b3" font-size="10">a = p</text>
+    </g>`;
+  tex('#f6', `\\begin{aligned} z &= \\textstyle\\sum_j \\pw{w_j}\\bl{x_j} + \\pw{b} = ${tn(z)}\\\\ a &= \\sigma(${tn(z)}) = \\yl{${tn(q)}}\\end{aligned}`, true);
+  const A = ACT6[act6], c = c6; c.fillStyle = HEX.panel; c.fillRect(0, 0, 320, 140);
+  const X = v => 160 + v * 30, Y = v => 84 - v * 40;
+  c.strokeStyle = HEX.line; c.lineWidth = 1; c.beginPath(); c.moveTo(10, Y(0) + .5); c.lineTo(310, Y(0) + .5); c.moveTo(160.5, 6); c.lineTo(160.5, 134); c.stroke();
+  c.font = '10px sans-serif'; c.fillStyle = HEX.muted; c.textAlign = 'left'; c.fillText('1', 164, Y(1) + 3); c.fillText('−1', 164, Y(-1) + 3); c.fillText('z →', 290, Y(0) - 4);
+  // clip (don't clamp) so ReLU visibly keeps rising off the top instead of looking flat
+  const curve = (f, col, dash, w) => { c.save(); c.beginPath(); c.rect(0, 2, 320, 136); c.clip(); c.strokeStyle = col; c.lineWidth = w; c.setLineDash(dash); c.beginPath(); let prev = null; for (let k = 0; k <= 300; k++) { const v = -5 + k / 30, y = clamp(f(v), -20, 20); if (prev !== null && Math.abs(y - prev) > .5) c.moveTo(X(v), Y(y)); else if (k) c.lineTo(X(v), Y(y)); else c.moveTo(X(v), Y(y)); prev = y; } c.stroke(); c.restore(); };
+  curve(A.d, HEX.orange, [5, 4], 1.8); curve(A.f, HEX.text, [], 2.4);
+  c.textAlign = 'left'; c.fillStyle = HEX.text; c.fillText('— f(z)', 12, 16); c.fillStyle = HEX.orange; c.fillText("- - f'(z), the slope", 12, 30);
+  tex('#f6b', A.tex, true); $('#m6').innerHTML = A.t;
+}
+function s6_init() {
+  c6 = setupCanvas($('#c6'), 320, 140);
+  for (const k of Object.keys(ACT6)) { const ch = h('button', { class: 'chip' + (k === act6 ? ' sel' : '') }, k === 'relu' ? 'ReLU' : k); ch.onclick = () => { act6 = k; $$('#actchips .chip').forEach(x => x.classList.toggle('sel', x === ch)); s6_draw(); }; $('#actchips').append(ch); }
+  numq($('#n6'), { q: 'A neuron has weights <span class="m">\\pw{\\mathbf w} = (2, -1)</span>, bias <span class="m">\\pw{b} = 0.5</span> and a <b>ReLU</b> activation. The input is <span class="m">\\bl{\\mathbf x} = (1.5,\\ 4)</span>. What does the neuron output?', answer: 0, tol: .001,
+    hint: 'First the weighted sum z, then apply max(0, z).',
+    solution: '<div class="M">\\begin{aligned} z &= 2(1.5) + (-1)(4) + 0.5 = -0.5\\\\ a &= \\max(0, -0.5) = 0\\end{aligned}</div>The neuron is <b>off</b> for this input. Remember that: an off ReLU neuron outputs 0 <i>and</i> has slope 0.' });
+}
+
+/* ===================== §7 Feature engineering ===================== */
+function genCircle(r, n, noise) { const pts = []; for (let i = 0; i < n; i++) { const inner = i % 2 === 0, rad = inner ? r() * 1.4 : 2 + r() * .9, t = r() * 2 * Math.PI; pts.push({ x: rad * Math.cos(t) + gauss(r) * noise, y: rad * Math.sin(t) + gauss(r) * noise, c: inner ? 1 : 0 }); } return pts; }
+function genXor(r, n, noise) { const pts = []; while (pts.length < n) { let x = (r() * 2 - 1) * 2.9, y = (r() * 2 - 1) * 2.9; x += x > 0 ? .2 : -.2; y += y > 0 ? .2 : -.2; x = clamp(x, -2.95, 2.95); y = clamp(y, -2.95, 2.95); pts.push({ x: x + gauss(r) * noise, y: y + gauss(r) * noise, c: x * y > 0 ? 1 : 0 }); } return pts; }
+const D7 = { circle: genCircle(mulberry32(5), 120, 0), xor: genXor(mulberry32(6), 120, 0) };
+const S7 = { ds: 'circle', feat: false, w: [0, 0, 0], b: 0, training: false, trained: false };
+/* features are scaled so they all sit roughly in [-1, 1]; training is plain gradient descent on cross-entropy */
+const s7f = (ds, x, y) => [x / 3, y / 3, ds === 'circle' ? (x * x + y * y) / 9 : x * y / 9];
+const s7p = (x, y) => { const f = s7f(S7.ds, x, y); return sig(S7.w[0] * f[0] + S7.w[1] * f[1] + (S7.feat ? S7.w[2] * f[2] : 0) + S7.b); };
+const s7acc = () => { let ok = 0; for (const p of D7[S7.ds]) if ((s7p(p.x, p.y) > .5) === !!p.c) ok++; return ok / D7[S7.ds].length; };
+let c7, c7v;
+function s7_formula() {
+  if (!S7.trained) { tex('#f7', '\\text{press Train}', true); return; }
+  const a = S7.w[0] / 3, c = S7.w[1] / 3, d = S7.feat ? S7.w[2] / 9 : 0, b = S7.b, sgn = v => (v < 0 ? '-' : '+') + fmt(Math.abs(v), 2);
+  if (!S7.feat) { tex('#f7', `z = ${tn(a)}\\,x_1 ${sgn(c)}\\,x_2 ${sgn(b)} \\quad\\Rightarrow\\quad \\text{a straight line}`, true); return; }
+  if (S7.ds === 'circle') {
+    const cx = -a / (2 * d), cy = -c / (2 * d), r2 = cx * cx + cy * cy - b / d;
+    tex('#f7', `\\begin{aligned} z &= ${tn(d)}(x_1^2+x_2^2)\\\\ &\\quad ${sgn(a)}\\,x_1 ${sgn(c)}\\,x_2 ${sgn(b)}\\\\ z=0 &\\Rightarrow \\text{a circle}\\\\ &\\quad\\text{centre } (${tn(cx)}, ${tn(cy)}),\\ r = \\yl{${r2 > 0 ? tn(Math.sqrt(r2)) : '\\text{none}'}}\\end{aligned}`, true);
+  } else tex('#f7', `\\begin{aligned} z &= ${tn(d)}\\,x_1x_2\\\\ &\\quad ${sgn(a)}\\,x_1 ${sgn(c)}\\,x_2 ${sgn(b)}\\\\ z=0 &\\Rightarrow x_1 x_2 \\approx ${tn(-b / d)}\\end{aligned}`, true);
+}
+function s7_draw() {
+  const c = c7; if (S7.trained) drawHeat(c, 280, 40, s7p); else { c.fillStyle = HEX.panel; c.fillRect(0, 0, 280, 280); }
+  if (S7.trained && !S7.feat) drawLine(c, 280, S7.w[0] / 3, S7.w[1] / 3, S7.b, HEX.yellow);
+  drawPts(c, 280, D7[S7.ds]);
+  const fname = S7.ds === 'circle' ? 'x₁² + x₂²' : 'x₁ · x₂';
+  $('#ft7').textContent = (S7.feat ? '✓ using ' : '+ add feature ') + fname; $('#ft7').classList.toggle('on', S7.feat);
+  $('#fv7l').innerHTML = `The same points, plotted against the new feature <span class="nocase">${fname}</span>`;
+  const d = c7v; d.fillStyle = HEX.panel; d.fillRect(0, 0, 280, 150);
+  const pts = D7[S7.ds], fv = p => S7.ds === 'circle' ? p.x * p.x + p.y * p.y : p.x * p.y;
+  const fmin = S7.ds === 'circle' ? 0 : -9, fmax = 9, Y = v => 136 - (v - fmin) / (fmax - fmin) * 126, X = x => PX2(x, 280);
+  d.strokeStyle = HEX.line; d.beginPath(); d.moveTo(0, 136.5); d.lineTo(280, 136.5); d.stroke();
+  for (const p of pts) { d.fillStyle = p.c ? HEX.blue : HEX.red; d.beginPath(); d.arc(X(p.x), Y(clamp(fv(p), fmin, fmax)), 3, 0, 7); d.fill(); }
+  const thr = S7.ds === 'circle' ? 2.95 : 0; d.strokeStyle = HEX.yellow; d.setLineDash([5, 4]); d.lineWidth = 1.5; d.beginPath(); d.moveTo(0, Y(thr)); d.lineTo(280, Y(thr)); d.stroke(); d.setLineDash([]);
+  d.font = '10px sans-serif'; d.fillStyle = HEX.muted; d.textAlign = 'left'; d.fillText(`↑ ${fname}`, 4, 12); d.fillText('x₁ →', 250, 132);
+  d.fillStyle = HEX.yellow; d.textAlign = 'right'; d.fillText('one straight cut', 276, Y(thr) - 4);
+  s7_formula();
+}
+function s7_init() {
+  c7 = setupCanvas($('#c7'), 280, 280); c7v = setupCanvas($('#c7v'), 280, 150);
+  for (const [k, l] of [['circle', 'Circle'], ['xor', 'XOR']]) { const ch = h('button', { class: 'chip' + (k === S7.ds ? ' sel' : '') }, l); ch.onclick = () => { S7.ds = k; S7.trained = false; S7.w = [0, 0, 0]; S7.b = 0; $('#m7').textContent = ''; $$('#fe7 .chip').forEach(x => x.classList.toggle('sel', x === ch)); s7_draw(); }; $('#fe7').append(ch); }
+  $('#ft7').onclick = () => { S7.feat = !S7.feat; S7.trained = false; S7.w = [0, 0, 0]; S7.b = 0; $('#m7').textContent = 'Feature changed. Train again.'; s7_draw(); };
+  $('#tr7').onclick = () => {
+    if (S7.training) return; S7.training = true; S7.trained = true; S7.w = [0, 0, 0]; S7.b = 0; let n = 0; const pts = D7[S7.ds];
+    const tick = () => {
+      for (let k = 0; k < 25; k++) { const g = [0, 0, 0]; let gb = 0; for (const p of pts) { const f = s7f(S7.ds, p.x, p.y), e = s7p(p.x, p.y) - p.c; g[0] += e * f[0]; g[1] += e * f[1]; g[2] += e * f[2]; gb += e; } const lr = 4 / pts.length; S7.w[0] -= lr * g[0]; S7.w[1] -= lr * g[1]; if (S7.feat) S7.w[2] -= lr * g[2]; S7.b -= lr * gb; }
+      s7_draw(); const a = s7acc(); $('#m7').innerHTML = `Training one neuron… accuracy <b class="c-green">${Math.round(a * 100)}%</b>`;
+      if (++n < 60) requestAnimationFrame(tick); else { S7.training = false; $('#m7').innerHTML = `Done: accuracy <b class="c-green">${Math.round(a * 100)}%</b>. ` + (a > .95 ? 'One straight cut in the new feature does it.' : 'Stuck: no straight line fits this pattern.'); }
+    };
+    tick();
+  };
+  mcq($('#p7'), { mode: 'predict', q: 'Train one neuron on the circle using only <span class="m">x_1</span> and <span class="m">x_2</span>. Roughly what accuracy will it reach?', opts: [
+    { t: 'About 50–70%: barely better than guessing', ok: true, why: 'Any straight line leaves blue and red on both sides. Train it below without the feature and see.' },
+    { t: 'About 100%, given enough training', why: 'More training can\'t fix a model that can only draw straight lines. The limit is the model\'s shape, not the effort.' },
+    { t: 'About 0%', why: 'Even a bad line gets some points right. The worst it does is around coin-flip.' }] });
+  numq($('#n7'), { q: 'A neuron learned <span class="m">z = 2(x_1^2 + x_2^2) - 8</span>. Its boundary is a circle. What is the radius?', answer: 2, tol: .001,
+    hint: 'Set z = 0 and solve for x₁² + x₂², then take the square root.', solution: '<div class="M">2(x_1^2+x_2^2) - 8 = 0 \\;\\Rightarrow\\; x_1^2+x_2^2 = 4 \\;\\Rightarrow\\; r = \\sqrt 4 = 2</div>' });
+  s7_draw();
+}
+
+/* ===================== Neuron identity colours (§8–§9): one colour per hidden neuron ===================== */
+const NC = ['#f472b6', '#2dd4bf', '#818cf8', '#d6d3d1'], NCR = [[244, 114, 182], [45, 212, 191], [129, 140, 248], [214, 211, 209]];
+const relu = z => z > 0 ? z : 0;
+
+/* ===================== §8 Hinges: 1D, 3 ReLU neurons, MSE, full-batch gradient descent ===================== */
+const X8 = Array.from({ length: 25 }, (_, i) => -3 + i * .25), Y8 = X8.map(x => x * x / 3 - 1);
+const H8_INIT = { w: [1, 1, -1], b: [-2, -.5, 1], v: [.3, .3, .3], c: 0 }; // hinges start bunched on the right: x* = 2, 0.5, 1
+const S8 = { ...JSON.parse(JSON.stringify(H8_INIT)), step: 0, sel: 20, running: false, lr: .05 };
+const S8A = { w: 1, b: -.5 };
+let c8, c8a;
+function s8_fwd(x) { const z = S8.w.map((w, j) => w * x + S8.b[j]), hh = z.map(relu); let y = S8.c; hh.forEach((v, j) => y += S8.v[j] * v); return { z, h: hh, y }; }
+const s8_loss = () => X8.reduce((s, x, i) => s + (s8_fwd(x).y - Y8[i]) ** 2, 0) / X8.length;
+function s8_step() {
+  const N = X8.length, gw = [0, 0, 0], gb = [0, 0, 0], gv = [0, 0, 0]; let gc = 0;
+  X8.forEach((x, i) => { const { z, h: hh, y } = s8_fwd(x), e = 2 * (y - Y8[i]) / N; gc += e; for (let j = 0; j < 3; j++) { gv[j] += e * hh[j]; if (z[j] > 0) { gb[j] += e * S8.v[j]; gw[j] += e * S8.v[j] * x; } } });
+  for (let j = 0; j < 3; j++) { S8.w[j] -= S8.lr * gw[j]; S8.b[j] -= S8.lr * gb[j]; S8.v[j] -= S8.lr * gv[j]; } S8.c -= S8.lr * gc; S8.step++;
+}
+const X8p = x => 22 + (x + 3) / 6 * 290, Y8p = y => 204 - (y + 1.5) / 4 * 192;
+function s8_drawA() {
+  const c = c8a, { w, b } = S8A; c.fillStyle = HEX.panel; c.fillRect(0, 0, 320, 150);
+  const X = x => 22 + (x + 3) / 6 * 290, Y = y => 130 - y * 30;
+  c.strokeStyle = HEX.line; c.lineWidth = 1; c.beginPath(); c.moveTo(22, Y(0) + .5); c.lineTo(314, Y(0) + .5); c.stroke();
+  c.font = '10px sans-serif'; c.fillStyle = HEX.muted; c.textAlign = 'center'; for (const x of [-2, 0, 2]) c.fillText(x, X(x), 144); c.textAlign = 'left'; c.fillText('h', 26, 12);
+  c.save(); c.beginPath(); c.rect(22, 0, 292, 131); c.clip();
+  c.strokeStyle = NC[0]; c.lineWidth = 3; c.beginPath(); for (let k = 0; k <= 240; k++) { const x = -3 + k / 40, y = relu(w * x + b); k ? c.lineTo(X(x), Y(y)) : c.moveTo(X(x), Y(y)); } c.stroke(); c.restore();
+  if (Math.abs(w) > .02) { const xs = -b / w; if (xs > -3 && xs < 3) { c.setLineDash([4, 4]); c.strokeStyle = HEX.yellow; c.lineWidth = 1.5; c.beginPath(); c.moveTo(X(xs), 4); c.lineTo(X(xs), Y(0)); c.stroke(); c.setLineDash([]); c.fillStyle = HEX.yellow; c.beginPath(); c.arc(X(xs), Y(0), 5, 0, 7); c.fill(); c.textAlign = 'center'; c.fillText('hinge', X(xs), 14); } }
+  $('#w8ao').textContent = fmt(w, 2); $('#b8ao').textContent = fmt(b, 2);
+  tex('#f8a', Math.abs(w) < .02 ? '\\pw{w} \\approx 0:\\ \\text{no hinge, just a flat line}' : `x^{*} = -\\frac{\\pw{b}}{\\pw{w}} = -\\frac{${tn(b)}}{${tn(w)}} = \\yl{${tn(-b / w)}}`, true);
+}
+function s8_draw() {
+  const c = c8; c.fillStyle = HEX.panel; c.fillRect(0, 0, 320, 224);
+  c.strokeStyle = HEX.line; c.lineWidth = 1; c.beginPath(); c.moveTo(22, Y8p(0) + .5); c.lineTo(314, Y8p(0) + .5); c.moveTo(X8p(0) + .5, 6); c.lineTo(X8p(0) + .5, 206); c.stroke();
+  c.font = '10px sans-serif'; c.fillStyle = HEX.muted; c.textAlign = 'center'; for (const x of [-3, -2, -1, 1, 2, 3]) c.fillText(x, X8p(x), 218); c.textAlign = 'left'; c.fillText('y', X8p(0) + 4, 14); c.fillText('x →', 296, Y8p(0) - 4);
+  c.save(); c.beginPath(); c.rect(22, 2, 292, 204); c.clip();
+  for (let j = 0; j < 3; j++) { c.strokeStyle = NC[j]; c.globalAlpha = .75; c.lineWidth = 1.6; c.beginPath(); for (let k = 0; k <= 240; k++) { const x = -3 + k / 40, y = S8.v[j] * relu(S8.w[j] * x + S8.b[j]); k ? c.lineTo(X8p(x), Y8p(y)) : c.moveTo(X8p(x), Y8p(y)); } c.stroke(); c.globalAlpha = 1; }
+  for (let j = 0; j < 3; j++) { if (Math.abs(S8.w[j]) < 1e-3) continue; const xs = -S8.b[j] / S8.w[j]; if (xs < -3 || xs > 3) continue; c.setLineDash([4, 4]); c.strokeStyle = NC[j]; c.lineWidth = 1.5; c.beginPath(); c.moveTo(X8p(xs), 18); c.lineTo(X8p(xs), 206); c.stroke(); c.setLineDash([]); c.fillStyle = NC[j]; c.font = 'bold 11px sans-serif'; c.textAlign = 'center'; c.fillText(String(j + 1), X8p(xs), 14); }
+  c.strokeStyle = HEX.yellow; c.lineWidth = 3; c.beginPath(); for (let k = 0; k <= 240; k++) { const x = -3 + k / 40, y = s8_fwd(x).y; k ? c.lineTo(X8p(x), Y8p(y)) : c.moveTo(X8p(x), Y8p(y)); } c.stroke();
+  c.restore();
+  X8.forEach((x, i) => { c.fillStyle = HEX.text; c.beginPath(); c.arc(X8p(x), Y8p(Y8[i]), 3, 0, 7); c.fill(); });
+  const sx = X8[S8.sel]; c.strokeStyle = HEX.yellow; c.lineWidth = 2; c.beginPath(); c.arc(X8p(sx), Y8p(Y8[S8.sel]), 7, 0, 7); c.stroke();
+  $('#m8').innerHTML = `step <b>${S8.step}</b> · loss (MSE) <b class="c-orange">${fmt(s8_loss(), 4)}</b>`;
+  $('#tb8').innerHTML = '<tr><th style="text-align:left">neuron</th><th>hinge x*</th><th>w</th><th>b</th><th>v</th></tr>' + [0, 1, 2].map(j => `<tr><td style="text-align:left;color:${NC[j]}">● ${j + 1}</td><td style="color:${NC[j]}">${Math.abs(S8.w[j]) < 1e-3 ? '—' : fmt(-S8.b[j] / S8.w[j], 2)}</td><td class="c-purple">${fmt(S8.w[j], 2)}</td><td class="c-purple">${fmt(S8.b[j], 2)}</td><td class="c-purple">${fmt(S8.v[j], 2)}</td></tr>`).join('');
+  const { z, y } = s8_fwd(sx), e = y - Y8[S8.sel];
+  tex('#f8', `\\begin{aligned} \\bl{x} &= ${tn(sx)},\\quad y = ${tn(Y8[S8.sel])},\\quad \\hat y = ${tn(y)}\\\\ e &= \\hat y - y = \\og{${tn(e, 3)}} \\end{aligned}`, true);
+  $('#tb8b').innerHTML = '<tr><th style="text-align:left">neuron</th><th>z</th><th>on?</th><th>∂L/∂b</th><th>∂L/∂w</th></tr>' + [0, 1, 2].map(j => { const on = z[j] > 0, gb = 2 * e * S8.v[j] * (on ? 1 : 0), gw = gb * sx; return `<tr><td style="text-align:left;color:${NC[j]}">● ${j + 1}</td><td>${fmt(z[j], 2)}</td><td>${on ? '<span class="c-green">on (1)</span>' : '<span class="muted">off (0)</span>'}</td><td class="c-orange">${fmt(gb, 3)}</td><td class="c-orange">${fmt(gw, 3)}</td></tr>`; }).join('');
+}
+function s8_init() {
+  c8 = setupCanvas($('#c8'), 320, 224); c8a = setupCanvas($('#c8a'), 320, 150);
+  $('#w8a').oninput = e => { S8A.w = e.target.value / 100; s8_drawA(); }; $('#b8a').oninput = e => { S8A.b = e.target.value / 100; s8_drawA(); };
+  $('#c8').addEventListener('pointerdown', e => { const p = evPos($('#c8'), e); let best = 0, bd = 1e9; X8.forEach((x, i) => { const d = Math.hypot(X8p(x) - p[0], Y8p(Y8[i]) - p[1]); if (d < bd) { bd = d; best = i; } }); S8.sel = best; s8_draw(); });
+  $('#t8').onclick = () => {
+    if (S8.running) { S8.running = false; $('#t8').textContent = '▶ Train'; return; }
+    S8.running = true; $('#t8').textContent = '⏸ Pause'; const target = S8.step + 3000 - (S8.step % 3000 === 0 ? 0 : S8.step % 3000);
+    const tick = () => { if (!S8.running) return; for (let k = 0; k < 20 && S8.step < target; k++) s8_step(); s8_draw(); if (S8.step < target) requestAnimationFrame(tick); else { S8.running = false; $('#t8').textContent = '▶ Train'; } };
+    tick();
+  };
+  $('#s8').onclick = () => { for (let k = 0; k < 100; k++) s8_step(); s8_draw(); };
+  $('#r8').onclick = () => { S8.running = false; $('#t8').textContent = '▶ Train'; Object.assign(S8, JSON.parse(JSON.stringify(H8_INIT)), { step: 0 }); s8_draw(); };
+  numq($('#n8a'), { q: 'For some point, neuron 2 has <span class="m">z_2 = -0.4</span> (so it\'s off), <span class="m">\\pw{v_2} = 1.5</span>, the input is <span class="m">\\bl{x} = 2</span> and the error is <span class="m">e = 0.8</span>. What is <span class="m">\\og{\\partial L/\\partial w_2}</span> from this point?', answer: 0, tol: .001,
+    hint: 'Multiply the four factors: 2e · v₂ · f′(z₂) · x. What is ReLU\'s slope when z is negative?', solution: '<div class="M">\\og{\\tfrac{\\partial L}{\\partial w_2}} = 2(0.8)\\cdot 1.5\\cdot \\underbrace{0}_{\\text{off}}\\cdot 2 = 0</div>The neuron was off, so this point can\'t blame it at all.' });
+  numq($('#n8b'), { q: 'Same point, but now neuron 2 is <b>on</b> (<span class="m">z_2 = 0.4</span>). What is <span class="m">\\og{\\partial L/\\partial w_2}</span>?', answer: 4.8, tol: .001,
+    hint: '2e · v₂ · 1 · x.', solution: '<div class="M">\\og{\\tfrac{\\partial L}{\\partial w_2}} = 2(0.8)\\cdot 1.5\\cdot 1\\cdot 2 = \\og{4.8}</div>Positive, so gradient descent <b>lowers</b> w₂. The output was too high (e > 0), this neuron was helping push it up, so it gets turned down.' });
+  s8_drawA(); s8_draw();
+}
+
+/* ===================== §9 Creases: 2 → 4 ReLU → 1 sigmoid, cross-entropy, full-batch gradient descent ===================== */
+const S9 = { seed: 1, W: [], b: [], v: [], c: 0, step: 0, running: false, lr: 1 };
+let c9, mini9 = [];
+function s9_reset(seed) {
+  const r = mulberry32(seed); S9.W = []; S9.b = []; S9.v = []; S9.c = 0; S9.step = 0; S9.seed = seed;
+  for (let j = 0; j < 4; j++) { const a = r() * 2 * Math.PI; S9.W.push([Math.cos(a) * 2, Math.sin(a) * 2]); S9.b.push(r() - .5); S9.v.push((r() - .5) * 2); }
+}
+/* inputs are scaled to x/3 so they sit in [-1, 1] */
+function s9_fwd(x, y) { const u = x / 3, q = y / 3, z = S9.W.map((w, j) => w[0] * u + w[1] * q + S9.b[j]); let o = S9.c; z.forEach((zz, j) => o += S9.v[j] * relu(zz)); return { z, o, u, q }; }
+function s9_stats() { let L = 0, ok = 0; for (const p of D7.circle) { const pr = clamp(sig(s9_fwd(p.x, p.y).o), 1e-9, 1 - 1e-9); L -= p.c ? Math.log(pr) : Math.log(1 - pr); if ((pr > .5) === !!p.c) ok++; } return { L: L / D7.circle.length, acc: ok / D7.circle.length }; }
+function s9_step() {
+  const D = D7.circle, gW = [[0, 0], [0, 0], [0, 0], [0, 0]], gb = [0, 0, 0, 0], gv = [0, 0, 0, 0]; let gc = 0;
+  for (const p of D) { const { z, o, u, q } = s9_fwd(p.x, p.y), e = (sig(o) - p.c) / D.length; gc += e; z.forEach((zz, j) => { gv[j] += e * relu(zz); if (zz > 0) { gb[j] += e * S9.v[j]; gW[j][0] += e * S9.v[j] * u; gW[j][1] += e * S9.v[j] * q; } }); }
+  for (let j = 0; j < 4; j++) { S9.W[j][0] -= S9.lr * gW[j][0]; S9.W[j][1] -= S9.lr * gW[j][1]; S9.b[j] -= S9.lr * gb[j]; S9.v[j] -= S9.lr * gv[j]; } S9.c -= S9.lr * gc; S9.step++;
+}
+function s9_draw() {
+  const c = c9; drawHeat(c, 300, 50, (x, y) => sig(s9_fwd(x, y).o));
+  const N = 100, s = 300 / N; c.fillStyle = HEX.yellow; let prev = [];
+  for (let j = 0; j <= N; j++) { const row = []; for (let i = 0; i <= N; i++) { const v = s9_fwd(-3 + i / N * 6, 3 - j / N * 6).o > 0; row.push(v); if ((i && v !== row[i - 1]) || (j && v !== prev[i])) c.fillRect(i * s - 1.2, j * s - 1.2, 2.4, 2.4); } prev = row; }
+  for (let j = 0; j < 4; j++) drawLine(c, 300, S9.W[j][0] / 3, S9.W[j][1] / 3, S9.b[j], NC[j], [6, 5], 2);
+  drawPts(c, 300, D7.circle, 3.2);
+  mini9.forEach((m, k) => {
+    const S = 64, n = 24, cs = S / n; const vals = []; let mx = 1e-9;
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const v = relu(s9_fwd(-3 + (i + .5) / n * 6, 3 - (j + .5) / n * 6).z[k]); vals.push(v); mx = Math.max(mx, v); }
+    vals.forEach((v, q) => { m.fillStyle = mix(COL.bg, NCR[k], Math.pow(v / mx, .7)); m.fillRect((q % n) * cs, (q / n | 0) * cs, cs + .3, cs + .3); });
+    m.save(); m.scale(64 / 300, 64 / 300); drawLine(m, 300, S9.W[k][0] / 3, S9.W[k][1] / 3, S9.b[k], '#ffffff', [10, 8], 6); m.restore();
+  });
+  const st = s9_stats(); $('#m9').innerHTML = `step <b>${S9.step}</b> · loss <b class="c-orange">${fmt(st.L, 3)}</b> · accuracy <b class="c-green">${Math.round(st.acc * 100)}%</b>`;
+  const neg = S9.v.filter(v => v < 0).length;
+  $('#m9b').innerHTML = S9.step < 300 ? 'Press <b>Train</b>. Watch the four dashed creases move, and the yellow boundary bend around the blue points.'
+    : `Output weights <span class="m">\\pw{v}</span> = (${S9.v.map(v => fmt(v, 1)).join(', ')}). <b>${neg} of 4 are negative</b>: ${neg ? 'each of those neurons is off near the middle and ramps up past its crease, pushing the output towards red. The further out a point is, in that neuron\'s direction, the more red. Together they measure "how far from the middle", the network\'s own version of <span class="m">x_1^2 + x_2^2</span>. Nobody wrote that down; gradient descent found it.' : 'this run found a different arrangement. Try another random start and compare.'}`;
+  renderMath($('#m9b'));
+  const M = rows => `\\begin{bmatrix}${rows.map(r => r.map(v => tn(v, 1)).join(' & ')).join('\\\\')}\\end{bmatrix}`;
+  tex('#f9', S9.step < 300 ? '\\text{(train first)}' : `\\begin{aligned}\\pw{W_1} &= ${M(S9.W)},\\ \\ \\pw{\\mathbf b_1} = ${M(S9.b.map(v => [v]))}\\\\[4pt] \\pw{W_2} &= ${M([S9.v])},\\ \\ \\pw{b_2} = ${tn(S9.c, 1)}\\end{aligned}`, true);
+}
+function s9_init() {
+  c9 = setupCanvas($('#c9'), 300, 300);
+  for (let k = 0; k < 4; k++) { const cv = h('canvas'); $('#mini9').append(h('div', {}, cv, h('span', { style: `color:${NC[k]}` }, `● neuron ${k + 1}`))); mini9.push(setupCanvas(cv, 64, 64)); }
+  s9_reset(1);
+  $('#t9').onclick = () => {
+    if (S9.running) { S9.running = false; $('#t9').textContent = '▶ Train'; return; }
+    S9.running = true; $('#t9').textContent = '⏸ Pause'; const target = S9.step + 2000;
+    const tick = () => { if (!S9.running) return; for (let k = 0; k < 10 && S9.step < target; k++) s9_step(); s9_draw(); if (S9.step < target) requestAnimationFrame(tick); else { S9.running = false; $('#t9').textContent = '▶ Train'; } };
+    tick();
+  };
+  $('#s9b').onclick = () => { for (let k = 0; k < 50; k++) s9_step(); s9_draw(); };
+  $('#r9').onclick = () => { S9.running = false; $('#t9').textContent = '▶ Train'; s9_reset(S9.seed + 1); s9_draw(); };
+  numq($('#n9'), { q: 'How many parameters (weights + biases) does this 2 → 4 → 1 network have?', answer: 17, tol: .001,
+    hint: 'Count W₁ (4×2), b₁ (4), W₂ (1×4) and b₂ (1).', solution: '<div class="M">\\underbrace{4\\times2}_{W_1} + \\underbrace{4}_{\\mathbf b_1} + \\underbrace{1\\times4}_{W_2} + \\underbrace{1}_{b_2} = 8 + 4 + 4 + 1 = 17</div>Your CNN works the same way, at 10,330.' });
+  s9_draw();
+}
+
+/* ===================== §10 Backprop on the smallest chain: h = w1·x, ŷ = w2·h, L = (ŷ − y)² ===================== */
+const C10 = { x: 1.5, y: 2, w1: .5, w2: .8, lr: .1, ph: -1, h: null, yh: null, L: null, g: null, hist: [], iter: 0 };
+let c10;
+function s10_do(ph) {
+  const s = C10;
+  if (ph === 0) { s.h = s.w1 * s.x; s.yh = s.w2 * s.h; s.L = null; s.g = null; }
+  if (ph === 1) { if (s.yh === null) return false; s.L = (s.yh - s.y) ** 2; }
+  if (ph === 2) { if (s.L === null) return false; const dy = 2 * (s.yh - s.y); s.g = { dy, dw2: dy * s.h, dh: dy * s.w2, dw1: dy * s.w2 * s.x }; }
+  if (ph === 3) { if (!s.g) return false; s.prev = { w1: s.w1, w2: s.w2 }; s.w1 -= s.lr * s.g.dw1; s.w2 -= s.lr * s.g.dw2; s.iter++; s.hist.push(s.L); s.h = s.yh = s.L = null; s.gUsed = s.g; s.g = null; }
+  s.ph = ph; return true;
+}
+function s10_draw(msg) {
+  const s = C10, n = v => v === null ? '?' : fmt(v, 3), g = s.g;
+  const node = (x, lbl, val, col) => `<circle cx="${x}" cy="56" r="22" fill="#141821" stroke="${col}" stroke-width="1.5"/><text x="${x}" y="52" fill="#98a2b3" font-size="10">${lbl}</text><text x="${x}" y="66" fill="${col}" font-size="11">${val}</text>`;
+  $('#chain').innerHTML = `<defs><marker id="ah10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#98a2b3"/></marker></defs>
+  <g font-family="ui-monospace,Menlo,monospace" text-anchor="middle">
+    ${node(26, 'x', fmt(s.x, 1), HEX.blue)}${node(118, 'h', n(s.h), s.h === null ? '#566' : HEX.blue)}${node(210, 'ŷ', n(s.yh), s.yh === null ? '#566' : HEX.blue)}${node(294, 'L', n(s.L), s.L === null ? '#566' : HEX.orange)}
+    <line x1="48" y1="56" x2="94" y2="56" stroke="#98a2b3" marker-end="url(#ah10)"/><line x1="140" y1="56" x2="186" y2="56" stroke="#98a2b3" marker-end="url(#ah10)"/><line x1="232" y1="56" x2="270" y2="56" stroke="#98a2b3" marker-end="url(#ah10)"/>
+    <text x="72" y="24" fill="${HEX.purple}" font-size="11">w₁=${fmt(s.w1, 3)}</text><text x="164" y="24" fill="${HEX.purple}" font-size="11">w₂=${fmt(s.w2, 3)}</text><text x="252" y="24" fill="${HEX.green}" font-size="10">y=${s.y}</text>
+    ${g ? `<text x="72" y="104" fill="${HEX.orange}" font-size="10.5">∂L/∂w₁</text><text x="72" y="118" fill="${HEX.orange}" font-size="11">${fmt(g.dw1, 3)}</text>
+    <text x="164" y="104" fill="${HEX.orange}" font-size="10.5">∂L/∂w₂</text><text x="164" y="118" fill="${HEX.orange}" font-size="11">${fmt(g.dw2, 3)}</text>
+    <text x="252" y="104" fill="${HEX.orange}" font-size="10.5">∂L/∂ŷ</text><text x="252" y="118" fill="${HEX.orange}" font-size="11">${fmt(g.dy, 3)}</text>
+    <path d="M280 138 L40 138" stroke="${HEX.orange}" stroke-dasharray="4 3" marker-end="url(#ah10)"/>` : ''}
+  </g>`;
+  const box = $('#chmsg'); box.innerHTML = '';
+  const say = (html, texSrc) => { box.append(h('div', { html })); if (texSrc) { const d = h('div', { class: 'M' }); box.append(d); tex(d, texSrc, true); } };
+  if (msg) say(msg);
+  else if (s.ph < 0) say('Press <b>① Forward</b> to start.');
+  else if (s.ph === 0) say('<b class="c-blue">① Forward:</b> values flow left to right.', `\\begin{aligned} h &= \\pw{w_1}\\bl{x} = ${tn(s.w1, 3)}\\times 1.5 = ${tn(s.h, 3)}\\\\ \\hat y &= \\pw{w_2}h = ${tn(s.w2, 3)}\\times ${tn(s.h, 3)} = ${tn(s.yh, 3)}\\end{aligned}`);
+  else if (s.ph === 1) say('<b class="c-orange">② Loss:</b> one number for how wrong. Nothing has learned yet.', `\\og{L} = (\\hat y - y)^2 = (${tn(s.yh, 3)} - 2)^2 = \\og{${tn(s.L, 4)}}`);
+  else if (s.ph === 2) say('<b class="c-orange">③ Backprop:</b> right to left, one link at a time. <b>No weight changes.</b>', `\\begin{aligned} \\og{\\tfrac{\\partial L}{\\partial \\hat y}} &= 2(\\hat y - y) = ${tn(g.dy, 3)}\\\\ \\og{\\tfrac{\\partial L}{\\partial w_2}} &= \\og{\\tfrac{\\partial L}{\\partial \\hat y}}\\cdot h = ${tn(g.dy, 3)}\\times${tn(s.h, 3)} = \\og{${tn(g.dw2, 3)}}\\\\ \\og{\\tfrac{\\partial L}{\\partial h}} &= \\og{\\tfrac{\\partial L}{\\partial \\hat y}}\\cdot \\pw{w_2} = ${tn(g.dh, 3)} \\quad\\text{(kept)}\\\\ \\og{\\tfrac{\\partial L}{\\partial w_1}} &= \\og{\\tfrac{\\partial L}{\\partial h}}\\cdot \\bl{x} = ${tn(g.dh, 3)}\\times 1.5 = \\og{${tn(g.dw1, 3)}}\\end{aligned}`);
+  else if (s.ph === 3) say(`<b class="c-blue">④ Optimizer step</b> (η = ${s.lr}). Iteration ${s.iter} done. Press ① again.`, `\\begin{aligned} \\pw{w_1} &\\leftarrow ${tn(s.prev.w1, 3)} - ${s.lr}\\times${tn(s.gUsed.dw1, 3, true)} = ${tn(s.w1, 3)}\\\\ \\pw{w_2} &\\leftarrow ${tn(s.prev.w2, 3)} - ${s.lr}\\times${tn(s.gUsed.dw2, 3, true)} = ${tn(s.w2, 3)}\\end{aligned}`);
+  const c = c10; c.fillStyle = HEX.panel; c.fillRect(0, 0, 320, 90); c.font = '10px sans-serif'; c.fillStyle = HEX.muted; c.textAlign = 'left'; c.fillText(`loss per iteration (${s.hist.length} so far)`, 6, 12);
+  c.strokeStyle = HEX.line; c.beginPath(); c.moveTo(10, 82.5); c.lineTo(312, 82.5); c.stroke();
+  if (s.hist.length) { const M = Math.max(...s.hist); c.strokeStyle = HEX.orange; c.lineWidth = 2; c.beginPath(); s.hist.forEach((v, i) => { const X = 10 + i / Math.max(20, s.hist.length - 1) * 300, Y = 82 - v / M * 62; i ? c.lineTo(X, Y) : c.moveTo(X, Y); }); c.stroke(); }
+}
+function s10_init() {
+  c10 = setupCanvas($('#chcv'), 320, 90);
+  const order = ['① Forward', '② Loss', '③ Backprop', '④ Optimizer step'];
+  $$('[data-ph]').forEach(b => b.onclick = () => { const ph = +b.dataset.ph; if (!s10_do(ph)) s10_draw(`Do the steps in order: <b>${order[(C10.ph + 1) % 4]}</b> comes next.`); else s10_draw(); });
+  $('#chx20').onclick = () => { for (let k = 0; k < 20; k++) for (let ph = 0; ph < 4; ph++) s10_do(ph); const y = C10.w1 * C10.w2 * C10.x; s10_draw(`Ran 20 full iterations. The loss went from <b class="c-orange">${fmt(C10.hist[0], 3)}</b> to <b class="c-orange">${fmt(C10.hist[C10.hist.length - 1], 6)}</b>, and now ŷ = w₂·w₁·x = <b>${fmt(y, 3)}</b>, the target.`); };
+  $('#chreset').onclick = () => { Object.assign(C10, { w1: .5, w2: .8, ph: -1, h: null, yh: null, L: null, g: null, hist: [], iter: 0 }); s10_draw(); };
+  orderq($('#o10'), { q: 'One training step in PyTorch. Tap the lines in the order they run:', items: ['<code>logits = model(x)</code>', '<code>loss = loss_fn(logits, y)</code>', '<code>optimizer.zero_grad()</code>', '<code>loss.backward()</code>', '<code>optimizer.step()</code>'],
+    hints: ['The forward pass comes first: nothing can be measured until the model has made a guess.', 'You need a guess (logits) before you can measure how wrong it is.', 'Clear the old gradients before computing new ones, otherwise they add up.', 'Backprop needs the loss to exist, and runs after the old gradients are cleared.', 'The step uses the gradients, so it has to come after backward().'],
+    why: 'Forward → loss → clear old gradients → backprop → update. (zero_grad can also go at the very start of the loop; what matters is that it runs before backward.)' });
+  s10_draw();
+}
+
+/* ===================== §11 Playground: a real MLP with backprop ===================== */
+const PACT = {
+  relu: { f: z => z > 0 ? z : 0, d: (z, a) => z > 0 ? 1 : 0 },
+  tanh: { f: Math.tanh, d: (z, a) => 1 - a * a },
+  sigmoid: { f: sig, d: (z, a) => a * (1 - a) },
+};
+class MLP {
+  constructor(sizes, act, seed) {
+    this.sizes = sizes; this.act = act; this.L = sizes.length - 1; const r = mulberry32(seed);
+    this.W = []; this.b = []; this.gW = []; this.gb = []; this.z = []; this.a = [new Float64Array(sizes[0])]; this.dl = [];
+    for (let l = 0; l < this.L; l++) {
+      const ni = sizes[l], no = sizes[l + 1], lim = Math.sqrt(6 / (ni + no));
+      this.W.push(Float64Array.from({ length: no * ni }, () => (r() * 2 - 1) * lim)); this.b.push(new Float64Array(no).fill(act === 'relu' && l < this.L - 1 ? .1 : 0));
+      this.gW.push(new Float64Array(no * ni)); this.gb.push(new Float64Array(no)); this.z.push(new Float64Array(no)); this.a.push(new Float64Array(no)); this.dl.push(new Float64Array(no));
+    }
+  }
+  forward(x) {
+    this.a[0].set(x); const A = PACT[this.act];
+    for (let l = 0; l < this.L; l++) {
+      const ni = this.sizes[l], no = this.sizes[l + 1], W = this.W[l], a = this.a[l], z = this.z[l], out = this.a[l + 1], last = l === this.L - 1;
+      for (let j = 0; j < no; j++) { let s = this.b[l][j]; for (let i = 0; i < ni; i++) s += W[j * ni + i] * a[i]; z[j] = s; out[j] = last ? sig(s) : A.f(s); }
+    }
+    return this.a[this.L][0];
+  }
+  /* backprop for one example with target y (BCE loss + sigmoid output → dL/dz = p − y); gradients accumulate */
+  backward(y) {
+    const A = PACT[this.act]; this.dl[this.L - 1][0] = this.a[this.L][0] - y;
+    for (let l = this.L - 1; l >= 0; l--) {
+      const ni = this.sizes[l], no = this.sizes[l + 1], d = this.dl[l], a = this.a[l], W = this.W[l];
+      for (let j = 0; j < no; j++) { this.gb[l][j] += d[j]; for (let i = 0; i < ni; i++) this.gW[l][j * ni + i] += d[j] * a[i]; }
+      if (l > 0) { const dp = this.dl[l - 1], zp = this.z[l - 1], ap = this.a[l]; for (let i = 0; i < ni; i++) { let s = 0; for (let j = 0; j < no; j++) s += W[j * ni + i] * d[j]; dp[i] = s * A.d(zp[i], ap[i]); } }
+    }
+  }
+  /* optimizer (plain SGD): separate from backprop */
+  step(lr, n) { for (let l = 0; l < this.L; l++) { const W = this.W[l], g = this.gW[l], b = this.b[l], gb = this.gb[l]; for (let k = 0; k < W.length; k++) { W[k] -= lr * g[k] / n; g[k] = 0; } for (let k = 0; k < b.length; k++) { b[k] -= lr * gb[k] / n; gb[k] = 0; } } }
+}
+const FEATS = [['x', (u, v) => u], ['y', (u, v) => v], ['x²', (u, v) => u * u], ['y²', (u, v) => v * v], ['xy', (u, v) => u * v]];
+const PG = { ds: 'circle', feats: [true, true, false, false, false], hl: 1, nn: 4, act: 'tanh', lr: .03, noise: 0, seed: 1, dseed: 1, net: null, pts: [], ep: 0, trL: [], teL: [], playing: false, frame: 0 };
+function pgGen() {
+  const r = mulberry32(PG.dseed * 7919 + 13), n = 200, ns = PG.noise / 100; let pts = [];
+  if (PG.ds === 'linear') for (let i = 0; i < n; i++) { const c = i % 2, s = .45 + 1.6 * ns; pts.push({ x: (c ? 1.3 : -1.3) + gauss(r) * s, y: (c ? 1.3 : -1.3) + gauss(r) * s, c }); }
+  if (PG.ds === 'circle') pts = genCircle(r, n, ns * 1.6);
+  if (PG.ds === 'xor') pts = genXor(r, n, ns * 1.6);
+  if (PG.ds === 'spiral') for (let i = 0; i < n / 2; i++) for (const c of [0, 1]) { const t = i / (n / 2), rad = .15 + t * 2.75, ang = 1.75 * t * 2 * Math.PI + (c ? Math.PI : 0); pts.push({ x: rad * Math.sin(ang) + gauss(r) * ns * 1.0, y: rad * Math.cos(ang) + gauss(r) * ns * 1.0, c }); }
+  for (let i = pts.length - 1; i > 0; i--) { const j = r() * (i + 1) | 0; [pts[i], pts[j]] = [pts[j], pts[i]]; }
+  pts.forEach((p, i) => { p.test = i >= n / 2; p.f = null; });
+  PG.pts = pts;
+}
+const pgInputs = (x, y) => { const u = x / 3, v = y / 3, out = []; FEATS.forEach((f, i) => { if (PG.feats[i]) out.push(f[1](u, v)); }); return out; };
+function pgBuild() {
+  const nIn = PG.feats.filter(Boolean).length; const sizes = [nIn]; for (let l = 0; l < PG.hl; l++) sizes.push(PG.nn); sizes.push(1);
+  PG.net = new MLP(sizes, PG.act, PG.seed); PG.ep = 0; PG.trL = []; PG.teL = [];
+  for (const p of PG.pts) p.f = pgInputs(p.x, p.y);
+  pgRecord(); pgDraw(true);
+}
+function pgLoss(test) { let L = 0, ok = 0, n = 0; for (const p of PG.pts) if (!!p.test === test) { const q = clamp(PG.net.forward(p.f), 1e-7, 1 - 1e-7); L -= p.c ? Math.log(q) : Math.log(1 - q); if ((q > .5) === !!p.c) ok++; n++; } return { L: L / n, acc: ok / n }; }
+function pgRecord() { const tr = pgLoss(false), te = pgLoss(true); PG.trL.push(tr.L); PG.teL.push(te.L); PG.last = { tr, te }; }
+function pgEpoch() {
+  const train = PG.pts.filter(p => !p.test), r = mulberry32(PG.ep + 17);
+  for (let i = train.length - 1; i > 0; i--) { const j = r() * (i + 1) | 0; [train[i], train[j]] = [train[j], train[i]]; }
+  for (let s = 0; s < train.length; s += 10) { const B = train.slice(s, s + 10); for (const p of B) { PG.net.forward(p.f); PG.net.backward(p.c); } PG.net.step(PG.lr, B.length); }
+  PG.ep++; pgRecord();
+}
+let pgC, lcC, netC;
+function pgDraw(full) {
+  const c = pgC; drawHeat(c, 300, 50, (x, y) => PG.net.forward(pgInputs(x, y)));
+  drawPts(c, 300, PG.pts);
+  const { tr, te } = PG.last;
+  $('#pgep').textContent = PG.ep; $('#pgtr').textContent = fmt(tr.L, 3); $('#pgte').textContent = fmt(te.L, 3); $('#pgacc').textContent = Math.round(te.acc * 100) + '%';
+  const d = lcC; d.fillStyle = '#141821'; d.fillRect(0, 0, 320, 120);
+  const n = PG.trL.length, M = Math.max(.8, ...PG.trL.slice(0, 3), ...PG.teL.slice(0, 3)) * 1.05, X = i => 30 + i / Math.max(n - 1, 50) * 284, Y = v => 104 - Math.min(v, M) / M * 94;
+  d.strokeStyle = '#3a4252'; d.lineWidth = 1; d.beginPath(); d.moveTo(30, 104.5); d.lineTo(316, 104.5); d.moveTo(30.5, 6); d.lineTo(30.5, 104); d.stroke();
+  d.font = '10px sans-serif'; d.fillStyle = '#98a2b3'; d.textAlign = 'right'; d.fillText('0', 26, 107); d.fillText(fmt(M, 1), 26, 14); d.textAlign = 'center'; d.fillText(`epochs (${PG.ep})`, 172, 117);
+  const plot = (arr, col, dash) => { d.strokeStyle = col; d.lineWidth = 1.8; d.setLineDash(dash || []); d.beginPath(); const step = Math.max(1, Math.floor(n / 400)); for (let i = 0; i < n; i += step) { i ? d.lineTo(X(i), Y(arr[i])) : d.moveTo(X(i), Y(arr[i])); } d.lineTo(X(n - 1), Y(arr[n - 1])); d.stroke(); d.setLineDash([]); };
+  plot(PG.teL, '#c8ced8', [4, 3]); plot(PG.trL, '#ff9f43');
+  if (full || PG.frame % 6 === 0) pgDrawNet();
+}
+function pgDrawNet() {
+  const c = netC, net = PG.net, sizes = net.sizes, Lc = sizes.length, H = 220; c.fillStyle = '#141821'; c.fillRect(0, 0, 320, H);
+  const colX = l => 46 + l * (250 / (Lc - 1)), nodeY = (l, i) => { const n = sizes[l], gap = Math.min(26, (H - 30) / n); return H / 2 + (i - (n - 1) / 2) * gap; };
+  const NS = 20, G = 10;
+  // per-neuron maps over a G×G grid
+  const maps = sizes.map(n => Array.from({ length: n }, () => new Float64Array(G * G)));
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const x = -3 + (i + .5) / G * 6, y = 3 - (j + .5) / G * 6; net.forward(pgInputs(x, y)); for (let l = 0; l < Lc; l++) for (let k = 0; k < sizes[l]; k++) maps[l][k][j * G + i] = net.a[l][k]; }
+  for (let l = 0; l < Lc - 1; l++) { const W = net.W[l], ni = sizes[l]; let mw = 1e-9; for (const w of W) mw = Math.max(mw, Math.abs(w)); for (let j = 0; j < sizes[l + 1]; j++) for (let i = 0; i < ni; i++) { const w = W[j * ni + i]; c.strokeStyle = w >= 0 ? 'rgba(88,196,221,.75)' : 'rgba(252,98,85,.75)'; c.lineWidth = .3 + Math.abs(w) / mw * 3.2; c.beginPath(); c.moveTo(colX(l) + NS / 2, nodeY(l, i)); c.lineTo(colX(l + 1) - NS / 2, nodeY(l + 1, j)); c.stroke(); } }
+  const names = FEATS.filter((f, i) => PG.feats[i]).map(f => f[0]);
+  for (let l = 0; l < Lc; l++) for (let k = 0; k < sizes[l]; k++) {
+    const m = maps[l][k], last = l === Lc - 1; let mx = 1e-9; for (const v of m) mx = Math.max(mx, Math.abs(last ? v - .5 : v));
+    const x0 = colX(l) - NS / 2, y0 = nodeY(l, k) - NS / 2, cs = NS / G;
+    for (let q = 0; q < G * G; q++) { c.fillStyle = last ? probCol(m[q]) : divCol(m[q], mx); c.fillRect(x0 + (q % G) * cs, y0 + (q / G | 0) * cs, cs + .2, cs + .2); }
+    c.strokeStyle = last ? '#ffd23f' : '#3a4252'; c.lineWidth = 1; c.strokeRect(x0 - .5, y0 - .5, NS + 1, NS + 1);
+    if (l === 0) { c.font = '11px ui-monospace,Menlo,monospace'; c.fillStyle = '#e7eaf0'; c.textAlign = 'right'; c.fillText(names[k], x0 - 5, nodeY(l, k) + 4); }
+  }
+  c.font = '10px sans-serif'; c.fillStyle = '#98a2b3'; c.textAlign = 'center';
+  c.fillText('inputs', colX(0), 12); for (let l = 1; l < Lc - 1; l++) c.fillText('hidden ' + l, colX(l), 12); c.fillText('output', colX(Lc - 1), 12);
+}
+function pgPlay(on) {
+  PG.playing = on; $('#pgplay').textContent = on ? '⏸ Pause' : '▶ Play';
+  if (on) { const tick = () => { if (!PG.playing) return; for (let k = 0; k < 2; k++) pgEpoch(); PG.frame++; pgDraw(false); if (PG.ep >= 5000) { pgPlay(false); return; } requestAnimationFrame(tick); }; requestAnimationFrame(tick); }
+  else if (PG.net) pgDrawNet();
+}
+function pgSync() {
+  $$('#pgds .chip').forEach(c => c.classList.toggle('sel', c.dataset.k === PG.ds));
+  $$('#pgft .chip').forEach((c, i) => c.classList.toggle('sel', PG.feats[i]));
+  $('#hl').textContent = PG.hl; $('#nn').textContent = PG.nn; $('#hlm').disabled = PG.hl <= 0; $('#hlp').disabled = PG.hl >= 3; $('#nnm').disabled = PG.nn <= 1 || PG.hl === 0; $('#nnp').disabled = PG.nn >= 8 || PG.hl === 0;
+  $$('#pgact button').forEach(b => b.classList.toggle('sel', b.dataset.a === PG.act));
+  $$('#pglr .chip').forEach(c => c.classList.toggle('sel', +c.dataset.v === PG.lr));
+  $('#pgnoise').value = PG.noise; $('#pgno').textContent = PG.noise + '%';
+}
+function pgConfigure(cfg) { pgPlay(false); Object.assign(PG, cfg); if ('ds' in cfg || 'noise' in cfg) pgGen(); pgSync(); pgBuild(); }
+function s11_init() {
+  pgC = setupCanvas($('#pgcv'), 300, 300); lcC = setupCanvas($('#pglc'), 320, 120); netC = setupCanvas($('#pgnet'), 320, 220);
+  const ds = $('#pgds'); for (const [k, l] of [['linear', 'Separable'], ['circle', 'Circle'], ['xor', 'XOR'], ['spiral', 'Spirals']]) { const c = h('button', { class: 'chip', 'data-k': k }, l); c.onclick = () => pgConfigure({ ds: k }); ds.append(c); }
+  const ft = $('#pgft'); FEATS.forEach((f, i) => { const c = h('button', { class: 'chip' }, f[0]); c.onclick = () => { const nf = PG.feats.slice(); nf[i] = !nf[i]; if (!nf.some(Boolean)) return; pgConfigure({ feats: nf }); }; ft.append(c); });
+  $('#hlm').onclick = () => pgConfigure({ hl: Math.max(0, PG.hl - 1) }); $('#hlp').onclick = () => pgConfigure({ hl: Math.min(3, PG.hl + 1) });
+  $('#nnm').onclick = () => pgConfigure({ nn: Math.max(1, PG.nn - 1) }); $('#nnp').onclick = () => pgConfigure({ nn: Math.min(8, PG.nn + 1) });
+  $$('#pgact button').forEach(b => b.onclick = () => pgConfigure({ act: b.dataset.a }));
+  const lr = $('#pglr'); for (const v of [.003, .01, .03, .1, .3, 1]) { const c = h('button', { class: 'chip', 'data-v': v }, String(v)); c.onclick = () => { PG.lr = v; pgSync(); }; lr.append(c); }
+  $('#pgnoise').oninput = e => { PG.noise = +e.target.value; $('#pgno').textContent = PG.noise + '%'; };
+  $('#pgnoise').onchange = e => pgConfigure({ noise: +e.target.value });
+  $('#pgplay').onclick = () => pgPlay(!PG.playing);
+  $('#pgstep').onclick = () => { pgPlay(false); pgEpoch(); pgDraw(true); };
+  $('#pgreset').onclick = () => { pgPlay(false); PG.seed++; pgBuild(); };
+  $('#pgdata').onclick = () => { pgPlay(false); PG.dseed++; pgGen(); pgBuild(); };
+  const TRIES = [
+    { t: '<b>Feature engineering vs one neuron.</b> Circle, <b>0 hidden layers</b>, inputs x and y only. Press Play: it stalls near 50%. Then turn on <b>x²</b> and <b>y²</b> and play again.', cfg: { ds: 'circle', hl: 0, feats: [true, true, false, false, false], act: 'tanh', lr: .1, noise: 0 } },
+    { t: '<b>XOR the classical way.</b> 0 hidden layers fails on XOR. Add the <b>xy</b> feature and it solves instantly, because the sign of xy <i>is</i> the answer.', cfg: { ds: 'xor', hl: 0, feats: [true, true, false, false, false], act: 'tanh', lr: .1, noise: 0 } },
+    { t: '<b>Let the network invent features.</b> Circle with only x and y, but <b>1 hidden layer of 4 neurons</b>. Watch the hidden squares in the network diagram: each one is a crease, as in §9.', cfg: { ds: 'circle', hl: 1, nn: 4, feats: [true, true, false, false, false], act: 'tanh', lr: .03, noise: 0 } },
+    { t: '<b>Spirals with the fewest neurons you can.</b> Start at 3 layers × 8, ReLU, lr 0.1: it gets past 90% test accuracy in about 600 epochs. Then remove neurons or layers and see when it can\'t keep up. Does turning on x² and y² let you use fewer?', cfg: { ds: 'spiral', hl: 3, nn: 8, feats: [true, true, false, false, false], act: 'relu', lr: .1, noise: 0 } },
+    { t: '<b>Make it overfit.</b> Noisy spirals, 3 layers × 8, lr 0.1. Play for a while: the <span class="c-orange">train</span> loss keeps falling while the <span style="color:#c8ced8">test</span> loss stops improving and turns up. That gap is memorised noise.', cfg: { ds: 'spiral', hl: 3, nn: 8, feats: [true, true, false, false, false], act: 'tanh', lr: .1, noise: 45 } },
+    { t: '<b>Learning rate too big.</b> Circle, 1 layer × 4, <b>lr 1</b>. The loss jumps around instead of falling smoothly. Then try 0.003: smooth but slow.', cfg: { ds: 'circle', hl: 1, nn: 4, feats: [true, true, false, false, false], act: 'tanh', lr: 1, noise: 0 } },
+  ];
+  const tr = $('#tries'); TRIES.forEach(x => { const b = h('button', { class: 'btn' }, 'Set it up ↑'); b.onclick = () => { pgConfigure(x.cfg); $('#pg').scrollIntoView({ behavior: 'smooth' }); }; tr.append(h('div', { class: 'try' }, h('p', { html: x.t }), b)); });
+  pgGen(); pgSync(); pgBuild();
+}
+
+
+/* ===================== §12 Bridge to CNNs ===================== */
+function tshirt() {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 28; const c = cv.getContext('2d'); c.fillStyle = '#000'; c.fillRect(0, 0, 28, 28);
+  c.fillStyle = '#d8d8d8'; c.beginPath(); [[9, 4], [12, 5.5], [16, 5.5], [19, 4], [25.5, 8], [23, 13.5], [20, 11.5], [20, 25], [8, 25], [8, 11.5], [5, 13.5], [2.5, 8]].forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill();
+  const d = c.getImageData(0, 0, 28, 28).data; return Float32Array.from({ length: 784 }, (_, i) => d[i * 4] / 255);
+}
+const IMG9 = tshirt(), PERM = (() => { const r = mulberry32(3), p = [...Array(784).keys()]; for (let i = 783; i > 0; i--) { const j = r() * (i + 1) | 0; [p[i], p[j]] = [p[j], p[i]]; } return p; })();
+let shuffled = false, shC, cvC, convK = 0;
+function draw28(c, img, s) { for (let i = 0; i < 784; i++) { c.fillStyle = grayCol(img[i]); c.fillRect((i % 28) * s, (i / 28 | 0) * s, s, s); } }
+function drawS9count() { const n = +$('#bn').value; $('#bno').textContent = n; tex('#bcount', `\\underbrace{784\\times${n}}_{\\text{weights}} + \\underbrace{${n}}_{\\text{biases}} = \\pw{${fmtInt(784 * n + n).replace(/,/g, '{,}')}}`, true); }
+function s12_init() {
+  const bc = setupCanvas($('#bimg'), 112, 112); draw28(bc, IMG9, 4);
+  shC = setupCanvas($('#bshuf'), 196, 196); draw28(shC, IMG9, 7);
+  $('#bn').oninput = drawS9count; drawS9count();
+  $('#bshbtn').onclick = () => { shuffled = !shuffled; const img = shuffled ? Float32Array.from(PERM, i => IMG9[i]) : IMG9; draw28(shC, img, 7); $('#bshbtn').textContent = shuffled ? 'Un-shuffle' : 'Shuffle the pixels'; };
+  cvC = setupCanvas($('#bconv'), 300, 150);
+  const K = [-1, 0, 1, -2, 0, 2, -1, 0, 1], out = new Float32Array(784);
+  for (let y = 0; y < 28; y++) for (let x = 0; x < 28; x++) { let s = 0; for (let ky = 0; ky < 3; ky++) for (let kx = 0; kx < 3; kx++) { const yy = y + ky - 1, xx = x + kx - 1; if (yy >= 0 && yy < 28 && xx >= 0 && xx < 28) s += IMG9[yy * 28 + xx] * K[ky * 3 + kx]; } out[y * 28 + x] = s; }
+  let last = 0;
+  const loop = ts => {
+    if (ts - last > 40) {
+      last = ts; convK = (convK + 1) % 784; const c = cvC; c.fillStyle = '#141821'; c.fillRect(0, 0, 300, 150);
+      const s = 4.6, X0 = 8, X1 = 160, Y0 = 12;
+      for (let i = 0; i < 784; i++) { c.fillStyle = grayCol(IMG9[i]); c.fillRect(X0 + (i % 28) * s, Y0 + (i / 28 | 0) * s, s, s); }
+      for (let i = 0; i <= convK; i++) { c.fillStyle = divCol(out[i], 3); c.fillRect(X1 + (i % 28) * s, Y0 + (i / 28 | 0) * s, s, s); }
+      const x = convK % 28, y = convK / 28 | 0; c.strokeStyle = '#ffd23f'; c.lineWidth = 1.5; c.strokeRect(X0 + (x - 1) * s, Y0 + (y - 1) * s, 3 * s, 3 * s); c.strokeRect(X1 + x * s, Y0 + y * s, s, s);
+      c.strokeStyle = '#2a3140'; c.lineWidth = 1; c.strokeRect(X1 - .5, Y0 - .5, 28 * s + 1, 28 * s + 1);
+      c.font = '10px sans-serif'; c.fillStyle = '#98a2b3'; c.textAlign = 'center'; c.fillText('image', X0 + 14 * s, 146); c.fillText('feature map', X1 + 14 * s, 146);
+    }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
+
+/* ===================== Check questions ===================== */
+const CHECKS = {
+  q1: { q: 'What makes something machine learning rather than ordinary programming?', opts: [
+    { t: 'Experts write detailed if-then rules for every case', why: 'That\'s ordinary programming. In ML nobody writes the rule; it comes out of training on examples.' },
+    { t: 'The rule\'s numbers (the weights) are chosen automatically from examples with known answers', ok: true, why: 'Data + answers in, rule out. Even fitting a line (§2–§4) counts.' },
+    { t: 'It has to use a neural network', why: 'Neural networks are one kind of ML (deep learning). A straight-line fit is ML too.' },
+    { t: 'The computer understands what it learns', why: 'It adjusts numbers to make a loss smaller. That\'s all "learning" means here.' }] },
+  q2: { q: 'In <span class="m">\\hat y = \\pw{w}\\bl{x} + \\pw{b}</span>, which are the parameters (the knobs training changes)?', opts: [
+    { t: '<span class="m">\\bl{x}</span> and <span class="m">y</span>', why: 'Those are the data: the force you applied and the stretch you measured. Training can\'t change your measurements.' },
+    { t: '<span class="m">\\pw{w}</span> and <span class="m">\\pw{b}</span>', ok: true, why: 'They\'re the only numbers in the formula that aren\'t given by the data. Training picks them.' },
+    { t: '<span class="m">\\hat y</span>', why: 'ŷ is the output, computed from x, w and b. You change it only by changing w and b.' },
+    { t: 'All of them', why: 'Only w and b are free. x and y come from the measurements; ŷ is calculated.' }] },
+  q3: { q: 'What does the loss function do?', opts: [
+    { t: 'It gives the model feedback and changes the knobs', why: 'A very common mix-up. The loss only <b>measures</b>: it turns the current knobs into one number. Changing the knobs is the optimizer\'s job (§4).' },
+    { t: 'It measures how wrong the current knobs are, as a single number', ok: true, why: 'For MSE, the average squared miss. Lower is better, 0 is perfect.' },
+    { t: 'It finds the best line directly', why: 'It only scores a line you give it. Finding the best line needs a search, gradient descent (§4).' },
+    { t: 'It adds up the errors so positives and negatives cancel', why: 'That\'s exactly what squaring prevents: e² is never negative, so misses can\'t cancel.' }] },
+  q4: { q: 'At the current knobs, <span class="m">\\og{\\partial L/\\partial w} = -3</span>. What does one gradient-descent step do to <span class="m">\\pw{w}</span>?', opts: [
+    { t: 'Decreases w, because the gradient is negative', why: 'The update is w − η·(−3) = w + 3η: subtracting a negative number <b>adds</b>. Negative slope means downhill is to the right.' },
+    { t: 'Increases w', ok: true, why: 'w_new = w − η(−3) = w + 3η. The loss goes down as w goes up, so step up.' },
+    { t: 'Leaves w alone until the gradient is positive', why: 'Every step moves every knob against its own gradient, whatever its sign.' },
+    { t: 'Sets w to −3', why: 'The gradient is a slope, not a target value. It only sets the direction and size of the step.' }] },
+
+  q5: { q: 'Where is logistic regression\'s decision boundary?', opts: [
+    { t: 'Where <span class="m">z = w_1x_1 + w_2x_2 + b = 0</span>, i.e. where <span class="m">\\sigma(z) = 0.5</span>', ok: true, why: 'And <span class="m">z = 0</span> is a straight-line equation, which is why one neuron can only draw straight boundaries.' },
+    { t: 'Where the sigmoid output is 1', why: 'σ(z) only approaches 1 for very large z. The 50/50 point is σ(0) = 0.5.' },
+    { t: 'It curves around the blue points automatically', why: 'With inputs x₁ and x₂ only, z = 0 is always a straight line. Curving needs new features (§7) or layers (§8–§9).' },
+    { t: 'Wherever the loss is highest', why: 'The loss is one number for the whole dataset, not a place in the plane.' }] },
+  q6: { q: 'A ReLU neuron gets <span class="m">z = -0.5</span> for some input. What are its output <span class="m">a</span> and its slope <span class="m">f\'(z)</span> there?', opts: [
+    { t: '<span class="m">a = 0</span>, slope <span class="m">0</span>', ok: true, why: 'max(0, −0.5) = 0, and the flat left half of ReLU has slope 0. The neuron is "off": it outputs nothing and, as §8 shows, passes no learning signal back for this input.' },
+    { t: '<span class="m">a = -0.5</span>, slope <span class="m">1</span>', why: 'That\'s no activation at all. ReLU replaces negatives with 0.' },
+    { t: '<span class="m">a = 0</span>, slope <span class="m">1</span>', why: 'The output is right, but the slope of a flat line is 0, not 1. The slope is 1 only on the right-hand ramp (z > 0).' },
+    { t: '<span class="m">a = 0.5</span>, slope <span class="m">1</span>', why: 'ReLU doesn\'t flip signs; it zeroes negatives. Flipping would be |z|.' }] },
+  q7: { q: 'Why does adding <span class="m">x_1^2 + x_2^2</span> let a single neuron solve the circle?', opts: [
+    { t: 'In that feature, inside points are small and outside points are big, so one straight cut separates them', ok: true, why: 'A straight cut in the new feature, <span class="m">x_1^2 + x_2^2 = c</span>, is a circle back in the original picture.' },
+    { t: 'Because more inputs always means more accuracy', why: 'A useless feature adds nothing. This one works because it matches the pattern\'s shape.' },
+    { t: 'Because the neuron becomes non-linear', why: 'The neuron is unchanged: still a weighted sum and a sigmoid. The input changed.' },
+    { t: 'It doesn\'t; it just memorises the points', why: 'It generalises: any new point inside the circle gets a small x₁² + x₂² and is classified correctly.' }] },
+
+  q8: { q: 'A ReLU neuron happens to be <b>off for every training point</b>. What happens to its weights during training?', opts: [
+    { t: 'Nothing: its gradients are all 0, so it never changes', ok: true, why: 'Every per-point blame contains the factor <span class="m">f\'(z_j) = 0</span>. Summed over all points it\'s still 0, so gradient descent never moves it. This is a "dead ReLU".' },
+    { t: 'It grows until it switches on', why: 'Nothing pushes it. Gradient descent only moves weights with non-zero gradients, and an always-off ReLU has none.' },
+    { t: 'It gets the most blame, because it\'s doing nothing', why: 'Blame flows only through neurons that were on. An off neuron is invisible to the loss.' },
+    { t: 'PyTorch deletes it', why: 'Nothing is deleted. It just sits there unused.' }] },
+  q9: { q: 'You stack 5 layers but use <b>no activation functions</b>. What can the network represent?', opts: [
+    { t: 'Only what one linear layer can: a straight boundary', ok: true, why: 'Matrices multiply into one matrix: <span class="m">W_5\\cdots W_1\\mathbf x + (\\text{one bias})</span>. Depth does nothing without the bends.' },
+    { t: 'Any shape, because 5 layers is deep', why: 'Depth only helps with a bend (ReLU, tanh…) between layers. Without it, everything collapses.' },
+    { t: 'Five separate straight lines', why: 'They all combine into one straight line.' },
+    { t: 'Curves, but only gentle ones', why: 'Not even gentle ones. Linear in, linear out.' }] },
+
+  q10: { q: 'Which is the correct split of jobs?', opts: [
+    { t: 'The optimizer decides how to backprop, then backprop applies the update', why: 'Reversed. Backprop computes gradients with the chain rule; it\'s the same calculus whichever optimizer you pick. The optimizer only reads the gradients and applies <span class="m">w \\leftarrow w - \\eta\\,\\partial L/\\partial w</span>.' },
+    { t: 'Backprop computes each weight\'s gradient; the optimizer then nudges each weight against it', ok: true, why: 'Two separate steps, ③ and ④ above: <code>loss.backward()</code> then <code>optimizer.step()</code>.' },
+    { t: 'The loss function updates the weights directly', why: 'The loss only measures (§3). It never touches a weight.' },
+    { t: 'Backprop and the optimizer are two names for the same thing', why: 'In the chain above, ③ left both weights unchanged; only ④ moved them.' }] },
+  q11: { q: 'Training loss keeps falling, but test loss has started rising. What\'s happening?', opts: [
+    { t: 'Overfitting: the network is memorising noise in the training points', ok: true, why: 'It fits the training set ever better while getting worse on new points. The test set exists to catch exactly this.' },
+    { t: 'The learning rate is too small', why: 'A small η makes both losses fall slowly. It doesn\'t make them split apart.' },
+    { t: 'The test set is broken', why: 'The test points come from the same pattern. The gap shows a real problem: poor generalisation.' },
+    { t: 'Nothing is wrong; only training loss matters', why: 'Training loss can reach near zero by memorising. Test loss is what tells you how the model will do on new data.' }] },
+  q12: { q: 'Which two problems do convolution filters fix, compared with a fully connected layer on images?', opts: [
+    { t: 'Too many weights, and no notion of which pixels are neighbours', ok: true, why: 'Small filters look only at local neighbourhoods, and sharing one filter across every position keeps the weight count tiny (160 for your conv1).' },
+    { t: 'They make images bigger and add colour', why: 'Filters don\'t enlarge or colour images. They produce feature maps that highlight patterns.' },
+    { t: 'They remove the need for training', why: 'Filter weights are learned with exactly the same backprop + optimizer loop as everything else.' },
+    { t: 'They let you skip the loss function', why: 'CNNs still need a loss. Yours uses cross-entropy, from §5.' }] },
+};
+
+kitBoot({ inits: [s1_init, s2_init, s3_init, s4_init, s6_init, s5_init, s7_init, s8_init, s9_init, s10_init, s11_init, s12_init, () => s5_draw()], checks: CHECKS });
+</script>
+</body>
+</html>
