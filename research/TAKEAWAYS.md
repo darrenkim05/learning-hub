@@ -1,79 +1,108 @@
-# Study methods: what works, and the takeaway for each
+# Study methods for learning new concepts: takeaways
 
-Drawn from `01-learning-science.md` and `03-interaction-and-correctness.md`. Evidence strength: **Strong** = many studies or major reviews; **Moderate** = solid but narrower or with caveats; **Weak** = small studies or background knowledge not re-verified.
+**Focus:** the first encounter with a new concept (encoding and understanding), not long-term consolidation. Consolidation methods are listed briefly at the end.
 
-The overarching idea: **effort during learning is the point, not a cost.** A smooth page feels like learning but produces less of it. In Deslauriers et al. (2019), students in active physics sections learned more but *rated* their learning lower. Every takeaway below is a way to make the right kind of effort happen.
+Evidence strength: **Strong** = many studies or major reviews; **Moderate** = solid but narrower or with caveats; **Weak** = small studies, mixed results, or background knowledge not re-verified.
+
+**The big idea:** effort helps first-time learning too, but only the *right* effort. Two forces pull in opposite directions:
+- **Make the learner think before being told** (guess, attempt, predict). Errors made this way help, as long as feedback follows immediately.
+- **Keep everything else easy** while the concept is new. Working memory is small, so cut decoration, chunk the content, and use worked examples rather than unaided problems.
+
+Pages should make you think hard about the idea and nothing else.
 
 ---
 
-### 1. Retrieval practice (testing yourself)
-- **Evidence:** Strong. Rated "high utility" in Dunlosky et al.'s 2013 review. Most studies test recall of facts, and fewer test multi-step derivations.
-- **Takeaway:** Pulling something out of memory strengthens it far more than reading it again.
-- **On the page:** Close-book questions at the end of each section and the start of the next. "Re-derive this without looking" as the closer.
+## A. Before the explanation: prime the brain
 
-### 2. Spaced practice
-- **Evidence:** Strong. Also "high utility" in Dunlosky.
-- **Takeaway:** The same study time spread over days beats cramming it into one session.
-- **On the page:** Each page carries review cards, and a review page brings them back on a widening schedule.
+### 1. Pretesting (guess before you're taught)
+- **Evidence:** Moderate to strong. Answering questions on material you haven't studied improves later memory compared with just reading it, even when the guesses are wrong. Corrective feedback right after is essential; without it the benefit is weak or absent. Learners consistently *underrate* this method.
+- **Takeaway:** A wrong guess makes the correct answer stick better.
+- **On the page:** Open each section with 1-2 quick questions you can't yet answer, then reveal and explain straight away.
 
-### 3. Interleaving (mixing problem types)
-- **Evidence:** Moderate. Good in maths classes, but it feels worse to learners while it works.
-- **Takeaway:** Mixing problem types teaches you to *pick the method*, which blocked practice never trains.
-- **On the page:** Problem sets include 1-2 problems from earlier pages, unlabelled, so you must identify the approach.
+### 2. Productive failure (attempt a problem before instruction)
+- **Evidence:** Moderate. Helps conceptual understanding and transfer, not procedural speed. Only works if a proper explanation follows that contrasts your attempt with the real method.
+- **Takeaway:** Struggling briefly first shows you what the method is *for*.
+- **On the page:** One short hook problem per page (2-5 minutes, with a "show me" exit), followed by the method and "here's where your attempt differed".
 
-### 4. Worked examples, then fading
-- **Evidence:** Strong for novices. The benefit shrinks and then reverses as you gain expertise (expertise reversal). Adaptive fading beat fixed fading in two experiments.
-- **Takeaway:** Study full solutions when new; remove the scaffolding step by step as you get it.
-- **On the page:** Full derivation first, then the same derivation with the last step blanked, then more blanks. Option to skip ahead if you already know it.
+### 3. Contrasting cases
+- **Evidence:** Moderate (Schwartz & Bransford's "A time for telling"; background knowledge, not re-verified this session).
+- **Takeaway:** Comparing two cases that differ in one feature shows you what actually matters, and prepares you to understand the explanation.
+- **On the page:** Show two side-by-side situations (underdamped vs overdamped, a matrix with and without real eigenvalues) and ask "what's different, and why?" before naming the concept.
 
-### 5. Self-explanation
+### 4. Pre-training (names before mechanism)
+- **Evidence:** Moderate (Mayer, d ≈ 0.46).
+- **Takeaway:** Learn the parts and their names before learning how they interact, so working memory isn't juggling both.
+- **On the page:** A short "meet the pieces" block (symbols, units, what each one physically is) before the main derivation.
+
+## B. During the explanation: keep the load on the idea
+
+### 5. Worked examples beat unaided problems for novices
+- **Evidence:** Strong (cognitive load theory). Holds even against tutored problem-solving. Reverses once you're experienced (expertise reversal).
+- **Takeaway:** When something is new, studying a full solution teaches more than struggling through it alone (after the one brief hook attempt in #2).
+- **On the page:** Full worked derivation with a reason on each step. Fading (blanking steps) comes later in the page.
+
+### 6. Self-explanation
 - **Evidence:** Moderate. Works best paired with worked examples.
-- **Takeaway:** Explaining *why* each step is allowed turns following into understanding.
-- **On the page:** "Why is this step allowed?" prompts that you answer before the reason is shown.
+- **Takeaway:** Asking yourself "why is this step allowed?" turns following into understanding.
+- **On the page:** At key steps, pick or state the justification before it is shown.
 
-### 6. Generation / predict-then-reveal
-- **Evidence:** Moderate to strong. Producing an answer beats reading it. In demo studies, watching alone did little; committing to a prediction did the work.
-- **Takeaway:** Guess first, even badly. Being wrong and seeing why sticks.
-- **On the page:** Lock in a prediction before any result or plot appears. The reveal overlays your guess on the truth, then asks "why was I off?"
+### 7. Segmenting (learner-paced chunks)
+- **Evidence:** Moderate to strong (Mayer, d ≈ 0.70).
+- **Takeaway:** Small chunks you advance yourself beat one continuous stream.
+- **On the page:** One idea per section; you control when to move on.
 
-### 7. Productive failure (problem before instruction)
-- **Evidence:** Moderate. A meta-analysis favours it for conceptual understanding and transfer, not procedural speed. Some studies are null, and the published effect sizes need checking.
-- **Takeaway:** Struggling with a problem before being taught primes you to understand the method.
-- **On the page:** Once per page, a hook problem you can attempt but probably can't finish, followed by the method and a comparison with your attempt.
+### 8. Coherence (cut the extras)
+- **Evidence:** Moderate to strong (Mayer, d ≈ 0.70).
+- **Takeaway:** Interesting but unnecessary material (decorative visuals, side stories, background music) *lowers* learning.
+- **On the page:** Every visual must carry the concept. If it's only there to look good, delete it.
 
-### 8. Desirable difficulties and the fluency illusion
-- **Evidence:** Strong (as a pattern across the techniques above).
-- **Takeaway:** Recognising each step of a derivation feels like knowing it, but it isn't. That's why you can follow one but not reproduce it.
-- **On the page:** Never let "I followed it" count as done. Measure with unaided tests, not with how confident you feel.
+### 9. Signalling and contiguity (put related things together)
+- **Evidence:** Strong for contiguity (spatial d ≈ 0.79), moderate for signalling (d ≈ 0.46). Figures from a review abstract; check the primary source.
+- **Takeaway:** Labels next to the picture, and an equation next to the graph it describes, save your brain the effort of matching them up.
+- **On the page:** Colour each symbol the same in the equation and the plot (the kit already does this), and keep the formula on screen beside the widget.
 
-### 9. Interactive simulations
-- **Evidence:** Moderate, with caveats. PhET shows a large effect (d ≈ 0.83), but the studies are small and mostly compare against traditional lectures. The gain comes from guided inquiry around the sim.
-- **Takeaway:** Playing with sliders teaches little by itself. A sim teaches when it comes with a question.
-- **On the page:** Every widget has a prediction first, a specific goal ("find ζ so overshoot is below 5%"), a readout, and at most 1-3 parameters.
+### 10. Multiple linked representations
+- **Evidence:** Moderate (background knowledge).
+- **Takeaway:** Understanding means moving between equation, graph, physical picture and a worked number.
+- **On the page:** Each core result is shown in at least two linked forms. Changing one updates the other.
 
-### 10. Animation vs static pictures
-- **Evidence:** Moderate. When content is equal, animation rarely wins. It raised liking and *perceived* understanding without raising test scores.
-- **Takeaway:** Pretty motion makes you feel you understand more than you do.
-- **On the page:** Prefer learner-controlled, step-by-step visuals over autoplay.
+### 11. Concreteness fading (concrete → abstract)
+- **Evidence:** Weak to moderate, and mixed. A systematic review supports it in maths; a 2024 physics study found no benefit over showing the representations together.
+- **Takeaway:** Starting concrete and stepping to the abstract can help, but isn't guaranteed.
+- **On the page:** Start with a specific physical example, then generalise. Don't force it when the abstract form is clearer.
 
-### 11. Step-level feedback
-- **Evidence:** Strong. Step-based tutoring reaches d ≈ 0.76, close to human tutors (0.79). Answer-only checking is clearly weaker (VanLehn 2011).
-- **Takeaway:** Being told *which step* went wrong is worth much more than being told the answer is wrong.
-- **On the page:** Check intermediate steps where possible, not just the final number.
+### 12. Simulations need a question
+- **Evidence:** Moderate, with caveats. PhET's large effect (d ≈ 0.83) comes with guided inquiry. Animation alone raises liking and *perceived* understanding, not test scores.
+- **Takeaway:** Fiddling with sliders feels like learning but isn't, unless there's a task.
+- **On the page:** Predict first, then a specific goal ("find ζ so overshoot is below 5%"), with 1-3 sliders at most.
 
-### 12. Hint ladders
-- **Evidence:** Weak to moderate (built into tutoring systems; not re-verified here).
-- **Takeaway:** The smallest useful hint keeps the effort yours; the full solution ends it.
-- **On the page:** Nudge → principle → first step → full solution, each behind its own click. Heavy hint use triggers "try a fresh variant".
+## C. Right after the explanation: check it actually landed
 
-### 13. Expert habits for intuition
-- **Evidence:** Weak (background knowledge, not searched), but widely taught.
-- **Takeaway:** Strong engineers sanity-check everything: estimate the size, test extreme cases, check units, and see the same fact as equation, graph and physical picture.
-- **On the page:** Each major result gets an estimate, a limiting-case check, a units check and a second representation.
+### 13. The fluency illusion
+- **Evidence:** Strong. Students in active physics sections learned more but *rated* their learning lower (Deslauriers 2019).
+- **Takeaway:** "I followed it" is not "I understand it".
+- **On the page:** End each section with one question that needs the idea, not the words. Never use "got it?" buttons as a measure.
+
+### 14. Immediate feedback for new skills
+- **Evidence:** Moderate (background knowledge). Step-based feedback is strong (VanLehn, d ≈ 0.76).
+- **Takeaway:** While learning something new, find out immediately which step went wrong.
+- **On the page:** Check each step and explain the misconception behind each wrong option.
 
 ---
 
-### What doesn't work well
-- **Rereading, highlighting, summarising:** rated "low utility" by Dunlosky. They feel productive but add little.
-- **Watching explanations passively:** builds the illusion of understanding (you're confident until you have to write it out).
-- **Self-rated understanding:** learners prefer the smoother method even when it teaches less.
+## D. Consolidation (lower priority for this site)
+- **Retrieval practice** (Strong): recalling beats rereading.
+- **Spacing** (Strong): spread study over days.
+- **Interleaving** (Moderate): mix problem types so you learn to choose the method.
+
+**What doesn't work:** rereading, highlighting, summarising, passive watching, and judging learning by how confident you feel.
+
+## Sources added this round
+- Bastani et al. (2025), Generative AI without guardrails can harm learning, PNAS. https://papers.ssrn.com/abstract=4895486
+- Pretesting effect: feedback and timing (2025). https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12292081/
+- Potts & Shanks, Errorful generation. https://discovery-pp.ucl.ac.uk/10052994/1/Shanks_Errorful%20generation%20FINAL.pdf
+- Fyfe et al. (2014), Concreteness fading: systematic review. https://pc.cogs.indiana.edu/?p=885
+- Concreteness fading in physics (2020 critique). https://link.springer.com/article/10.1007/s10648-020-09581-7
+- Mayer principles and effect sizes (review abstract). https://www.synapsesocial.com/es/papers/69dbbbdacebd566818835a69
+- Worked-example effect. https://en.wikipedia.org/wiki/Worked-example_effect
+- Earlier sources: see `01-learning-science.md` and `03-interaction-and-correctness.md`.
