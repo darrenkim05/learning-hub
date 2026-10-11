@@ -18,7 +18,11 @@ Brainstorming phase: nothing here is final. Features will be cut before building
 | 5 | Review | Wanted for exam prep: "show me the concepts I'm weak on". Fed by wrong answers and "not yet" flags. |
 | 6 | Predictions and questions | Never forced. You can skim the whole page. Answers stay hidden until you attempt or tap "show answer". |
 | 7 | Tutor interface | Bottom sheet: select text → ask → answer slides up from the bottom. |
-| 8 | Learner data storage | localStorage for now (one browser). |
+| 8 | Learner data storage | localStorage for now (one browser), with export/import backup. |
+| 9 | Concept IDs | Defined per page/topic, namespaced like `classification/sigmoid`. |
+| 10 | Clearing flags | Manual only. |
+| 11 | Endpoint abuse | Passcode checked by the Vercel function. |
+| 12 | Proposed items (pipeline strip, glossary, flags, writing rules) | All accepted for 2.0. Remaining open items use Claude's suggestions; see `PLAN-2.0.md`. |
 
 ## Proposed from the NN-basics review (input for the 2.0 redesign)
 - "Where am I" pipeline strip on every section (data → model → loss → optimiser), highlighting which box the section changes.
