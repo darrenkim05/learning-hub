@@ -1,5 +1,7 @@
 # Planning decisions log
 
+**Versions:** 1.0 = the current site (nn-basics and CNN explorers, existing kit). 2.0 = the redesign planned here.
+
 Brainstorming phase: nothing here is final. Features will be cut before building.
 
 ## Product direction
@@ -14,9 +16,11 @@ Brainstorming phase: nothing here is final. Features will be cut before building
 | 3 | New questions on missed concepts | Paused. |
 | 4 | Step-level feedback | "Choose the next line" (3-4 candidate lines, wrong ones = common errors). No typing, no paper checkpoints. |
 | 5 | Review | Wanted for exam prep: "show me the concepts I'm weak on". Fed by wrong answers and "not yet" flags. |
+| 7 | Tutor interface | Bottom sheet: select text → ask → answer slides up from the bottom. |
+| 8 | Learner data storage | localStorage for now (one browser). |
 | 6 | Predictions and questions | Never forced. You can skim the whole page. Answers stay hidden until you attempt or tap "show answer". |
 
-## Proposed from the NN-basics review (pending agreement)
+## Proposed from the NN-basics review (input for the 2.0 redesign)
 - "Where am I" pipeline strip on every section (data → model → loss → optimiser), highlighting which box the section changes.
 - Symbol glossary: tap any symbol to see what it means. Defined once per page, attached automatically by the kit.
 - "Not yet" flag on any section or selected text. Stored locally, shown as a shaky-concepts list, sent to the AI tutor as context, and used for exam-prep review.
