@@ -25,3 +25,10 @@ Personal site of interactive lessons for hard university and masters STEM topics
 - Wrong quiz options are real misconceptions. Use "choose the next line" for derivations.
 - Lesson maths must pass `npm run check` before deploy.
 - Research behind these rules: `research/TAKEAWAYS.md`.
+
+## Version builds
+- Issues: darrenkim05/learning-hub
+- Decides the look: Darren
+- Learnings: `research/TAKEAWAYS.md` before writing any lesson content; `research/DECISIONS.md` before changing features.
+- Checks: `npm run build` and `npm run check`
+- Visual check: build, serve `.vercel/output/static` (`python3 -m http.server 4321`), then a Playwright Pixel 7 screenshot of `/lessons/<slug>/` (Chromium at `/opt/pw-browsers/chromium`; never `playwright install`).
