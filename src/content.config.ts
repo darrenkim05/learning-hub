@@ -2,7 +2,9 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
-const sym = z.union([z.string(), z.object({ tex: z.string(), means: z.string() })]);
+// role picks the colour everywhere the symbol appears: one role = one colour.
+const roleEnum = z.enum(['weight', 'input', 'output', 'loss', 'other']);
+const sym = z.union([z.string(), z.object({ tex: z.string().optional(), means: z.string(), role: roleEnum.optional() })]);
 
 const lessons = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/lessons' }),

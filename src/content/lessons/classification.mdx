@@ -11,14 +11,14 @@ concepts:
   cross-entropy: "Loss = minus log of the probability given to the true class; confident and wrong costs a lot"
   gradient: "For sigmoid plus cross-entropy, dL/dz = p - y, so dL/dw = (p - y)x and dL/db = p - y"
 symbols:
-  z: "score: the weighted sum before squashing; any real number"
-  w: "weight: how strongly an input pushes the score up or down"
-  x: "input feature of one point (a coordinate)"
-  b: "bias: slides the boundary without rotating it"
-  p: "model's probability that the point is blue, between 0 and 1"
-  y: "true label: 1 for blue, 0 for red"
-  L: "loss for one point: how bad the prediction was; lower is better"
-  sigma: {tex: "\\sigma", means: "sigmoid function: turns any score into a probability"}
+  z: {means: "score: the weighted sum before squashing; any real number", role: output}
+  w: {means: "weight: how strongly an input pushes the score up or down", role: weight}
+  x: {means: "input feature of one point (a coordinate)", role: input}
+  b: {means: "bias: slides the boundary without rotating it", role: weight}
+  p: {means: "model's probability that the point is blue, between 0 and 1", role: output}
+  y: {means: "true label: 1 for blue, 0 for red", role: other}
+  L: {means: "loss for one point: how bad the prediction was; lower is better", role: loss}
+  sigma: {tex: "\\sigma", means: "sigmoid function: turns any score into a probability", role: other}
 ref: "Bishop, PRML §4.3"
 ---
 import Section from '../../components/Section.astro';
@@ -26,12 +26,17 @@ import S from '../../components/S.astro';
 import Quiz from '../../components/Quiz.astro';
 import NextLine from '../../components/NextLine.astro';
 import PlaneWidget from '../../components/PlaneWidget.astro';
+import Callout from '../../components/Callout.astro';
 
 <Section id="s1" title="Same recipe, new problem" stage={['model', 'loss']} concepts={['recipe']} example="new">
 
 Before, the model predicted a **number** (a house price, say). Now each point is a **class**: blue or red. The model should say how likely a point is to be blue.
 
-The recipe is the same four boxes in the strip above: data, model, loss, optimiser. Watch which ones change.
+<Callout kind="picture">
+
+The recipe is four boxes in a row: data, model, loss, optimiser. The strip at the top lights up the boxes each section is about. Watch which ones change.
+
+</Callout>
 
 - **Model changes.** A straight-line formula can output 7 or -3. Those are not probabilities, so we add a squashing step.
 - **Loss changes.** Squared error suits numbers. For probabilities there is a better measure.
@@ -70,7 +75,11 @@ $$
 
 If <S k="z" /> is positive, say blue. If negative, say red. The dashed line is where <S k="z" /> is exactly 0.
 
+<Callout kind="takeaway">
+
 The two knobs do different jobs. The weight <S k="w" /> sets which way is "blue" and how fast the score grows. The bias <S k="b" /> slides the dashed line left or right.
+
+</Callout>
 
 </Section>
 
@@ -82,13 +91,17 @@ $$
 \sym{z} = \sym{w_1}\,\sym{x_1} + \sym{w_2}\,\sym{x_2} + \sym{b}
 $$
 
-The picture below shades the plane by what the model would say at each spot. Blue means "probably blue", red means "probably red", white is 50/50. The white band is the boundary, where $z = 0$. It is always a **straight line**.
+The picture below shades the plane by what the model would say at each spot. Blue means "probably blue", red means "probably red", white is 50/50. The white band is the boundary, where $\sym{z} = 0$. It is always a **straight line**.
 
 Play first, read after. Use the sliders, and drag the points around.
 
 <PlaneWidget />
 
-Notice that $w_1, w_2$ **rotate** the boundary, while $b$ **slides** it. Blue and red points at the far ends get strong colours; points near the white band are unsure.
+<Callout kind="takeaway">
+
+Notice that $\sym{w_1}, \sym{w_2}$ **rotate** the boundary, while $\sym{b}$ **slides** it. Blue and red points at the far ends get strong colours; points near the white band are unsure.
+
+</Callout>
 
 </Section>
 
@@ -104,9 +117,17 @@ $$
 |---|---|---|---|---|---|
 | $\sigma(z)$ | 0.02 | 0.12 | 0.50 | 0.88 | 0.98 |
 
-Why this shape? A big negative $z$ makes $e^{-z}$ huge, so $p$ heads to 0: confident red. A big positive $z$ makes $e^{-z}$ tiny, so $p$ heads to 1: confident blue. At $z = 0$ you get $\tfrac{1}{1+1} = 0.5$: can't tell.
+<Callout kind="why">
+
+A big negative $\sym{z}$ makes $e^{-\sym{z}}$ huge, so $\sym{p}$ heads to 0: confident red. A big positive $\sym{z}$ makes $e^{-\sym{z}}$ tiny, so $\sym{p}$ heads to 1: confident blue. At $\sym{z} = 0$ you get $\tfrac{1}{1+1} = 0.5$: can't tell.
+
+</Callout>
+
+<Callout kind="takeaway">
 
 The sigmoid belongs to the **model**: it is one more step between the score and the prediction. It is not part of the loss. The loss (next sections) only looks at the finished probability.
+
+</Callout>
 
 <Quiz id="sigmoid-where" concept="sigmoid" options={[
   { text: 'Part of the loss, because it involves a logarithm-like curve', why: 'The sigmoid has no logarithm. It is an exponential curve, and it sits before the loss: the loss receives p after the sigmoid has run.' },
@@ -123,12 +144,15 @@ Where does the sigmoid belong in the pipeline?
 
 <Section id="s5" title="Worked numbers on the plane" stage={['prediction']} concepts={['score', 'sigmoid']} symbols={['z', 'p', 'w', 'b']} example="same">
 
-Use the starting values from the widget: $w_1 = -0.8$, $w_2 = 1.5$, $b = 1$. Two of the points you saw:
+Use the starting values from the widget: $\sym{w_1} = -0.8$, $\sym{w_2} = 1.5$, $\sym{b} = 1$. Two of the points you saw:
 
 **Blue A** at $(1, 1)$:
 
 $$
-z = (-0.8)(1) + (1.5)(1) + 1 = 1.7, \qquad p = \sigma(1.7) = 0.85
+\begin{aligned}
+\sym{z} &= (-0.8)(1) + (1.5)(1) + 1 = 1.7 \\
+\sym{p} &= \sigma(1.7) = 0.85
+\end{aligned}
 $$
 
 The model gives 0.85 chance of blue. Correct and fairly sure.
@@ -136,7 +160,10 @@ The model gives 0.85 chance of blue. Correct and fairly sure.
 **Red A** at $(-1, -1)$:
 
 $$
-z = (-0.8)(-1) + (1.5)(-1) + 1 = 0.3, \qquad p = \sigma(0.3) = 0.57
+\begin{aligned}
+\sym{z} &= (-0.8)(-1) + (1.5)(-1) + 1 = 0.3 \\
+\sym{p} &= \sigma(0.3) = 0.57
+\end{aligned}
 $$
 
 The model leans blue for a red point. It is wrong. Reset the widget above and select red A to see exactly these numbers. Sliding $b$ below 0.7 fixes it: that is where $z$ crosses 0.
@@ -155,7 +182,11 @@ $$
 |---|---|---|---|---|---|
 | loss | 0 | 0.11 | 0.69 | 2.30 | 4.61 |
 
+<Callout kind="picture">
+
 Certain and right costs 0. Unsure costs a little. **Confident and wrong** costs a lot, with no upper limit. The model learns that bluffing is expensive.
+
+</Callout>
 
 With the label <S k="y" /> (1 for blue, 0 for red) one formula covers both cases:
 
@@ -163,12 +194,12 @@ $$
 \sym{L} = -\big[\sym{y}\ln \sym{p} + (1-\sym{y})\ln(1-\sym{p})\big]
 $$
 
-If $y = 1$ the second term vanishes and $L = -\ln p$. If $y = 0$ the first vanishes and $L = -\ln(1-p)$.
+If $\sym{y} = 1$ the second term vanishes and $\sym{L} = -\ln \sym{p}$. If $\sym{y} = 0$ the first vanishes and $\sym{L} = -\ln(1-\sym{p})$.
 
 Red A has $y = 0$ and $p = 0.574$, so the true class got $1 - 0.574 = 0.426$:
 
 $$
-L = -\ln(0.426) = 0.85
+\sym{L} = -\ln(0.426) = 0.85
 $$
 
 Blue A ($y=1$, $p = 0.85$) would score only $L = 0.17$.
@@ -191,7 +222,7 @@ Which prediction costs more under cross-entropy: **A**, or **B**?
 Gradient descent needs the slope of $L$ for each knob. Let's derive it with the chain rule, one step at a time. First the slope of $L$ with respect to $p$.
 
 $$
-L = -\big[y\ln p + (1-y)\ln(1-p)\big]
+\sym{L} = -\big[\sym{y}\ln \sym{p} + (1-\sym{y})\ln(1-\sym{p})\big]
 $$
 
 <NextLine id="dl-dp" concept="gradient" options={[
@@ -200,7 +231,7 @@ $$
   { tex: "\\dfrac{\\partial L}{\\partial p} = \\dfrac{y}{p} + \\dfrac{1-y}{1-p}", why: 'You dropped the overall minus sign in front of the bracket. Both terms should be flipped.' },
 ]}>
 
-$$L = -\big[y\ln p + (1-y)\ln(1-p)\big]$$
+$$\sym{L} = -\big[\sym{y}\ln \sym{p} + (1-\sym{y})\ln(1-\sym{p})\big]$$
 
 </NextLine>
 
@@ -224,11 +255,11 @@ Last step: $z = w_1 x_1 + w_2 x_2 + b$, so $\partial z/\partial w_1 = x_1$ and $
   { tex: "\\dfrac{\\partial L}{\\partial w_1} = p\\,x_1, \\qquad \\dfrac{\\partial L}{\\partial b} = p", why: 'You forgot the label. The error is p - y, how far the probability is from the truth. Using p alone only works when y = 0.' },
 ]}>
 
-$$\frac{\partial L}{\partial z} = p - y$$
+$$\frac{\partial \sym{L}}{\partial \sym{z}} = \sym{p} - \sym{y}$$
 
 </NextLine>
 
-So the gradient is **error times input**: $(p - y)$ says how wrong, and $x_j$ says how much that input contributed.
+So the gradient is **error times input**: $(\sym{p} - \sym{y})$ says how wrong, and $\sym{x}_j$ says how much that input contributed.
 
 Red A, with $y = 0$ and $p = 0.574$, $x_1 = -1$:
 
@@ -249,6 +280,10 @@ For Red A, $\partial L/\partial b = p - y = 0.57$. In which direction does one g
 
 </Quiz>
 
-**Summary.** Classification is score, then sigmoid, giving a probability. The boundary is the line where $z = 0$. The loss is minus log of the probability given to the truth. The gradient is error times input, and the optimiser is the same as before.
+<Callout kind="takeaway">
+
+**Summary.** Classification is score, then sigmoid, giving a probability. The boundary is the line where $\sym{z} = 0$. The loss is minus log of the probability given to the truth. The gradient is error times input, and the optimiser is the same as before.
+
+</Callout>
 
 </Section>

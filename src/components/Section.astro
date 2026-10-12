@@ -1,8 +1,8 @@
 ---
 // One lesson section. stage: pipeline boxes this section changes. concepts: concept IDs taught here.
-// symbols: keys shown in the "symbols in this section" box. example: "new" | "same" (same example, new twist).
+// symbols: keys in the collapsed symbols row. example: "new" | "same" (same example, new twist).
 import katex from 'katex';
-import { ctx, need, symTex, symMeans } from '../lib/lessons';
+import { ctx, need, symTex, symMeans, symRole } from '../lib/lessons';
 interface Props {
   id: string; title: string;
   stage?: string[]; concepts?: string[]; symbols?: string[];
@@ -14,20 +14,22 @@ stage.forEach((s) => need('stage', s, L.pipeline, L.slug));
 concepts.forEach((c) => need('concept', c, L.concepts, L.slug));
 symbols.forEach((s) => need('symbol', s, L.symbols, L.slug));
 const tex = (k: string) => katex.renderToString(symTex(k, L.symbols[k]), { throwOnError: true });
+const exampleLabel = example === 'new' ? 'new example' : example === 'same' ? 'same example' : '';
 ---
 <section class="sec" id={id} data-stage={stage.join(' ')} data-concepts={concepts.join(' ')} data-title={title}>
-  {example === 'new' && <span class="tag new">New example</span>}
-  {example === 'same' && <span class="tag same">Same example, new twist</span>}
+  <div class="kick-row">
+    <span class="kick">{[stage.join(' + '), exampleLabel].filter(Boolean).join(' · ')}</span>
+    <button type="button" class="flag" data-flag={id} aria-label="Flag this section as not yet understood" aria-pressed="false">⚑</button>
+  </div>
   <div class="sec-head">
     <h2>{title}</h2>
     <slot name="head" />
-    <button type="button" class="flag" data-flag={id} aria-label="Flag this section as not yet understood" aria-pressed="false">🚩</button>
   </div>
   {symbols.length > 0 && (
-    <details class="symbox" open>
-      <summary>Symbols in this section</summary>
+    <details class="symbox">
+      <summary><span class="sy-list">{symbols.map((k) => <span class={symRole(L.symbols[k])} set:html={tex(k)} />)}</span><span class="sy-lab">symbols</span></summary>
       <dl>
-        {symbols.map((k) => (<><dt data-sym={k} set:html={tex(k)} /><dd>{symMeans(L.symbols[k])}</dd></>))}
+        {symbols.map((k) => (<><dt class={symRole(L.symbols[k])} data-sym={k} set:html={tex(k)} /><dd>{symMeans(L.symbols[k])}</dd></>))}
       </dl>
     </details>
   )}

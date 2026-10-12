@@ -1,11 +1,11 @@
 ---
-// Tappable symbol in prose: <S k="p" />. Renders the symbol's TeX; tap shows its meaning.
+// Tappable symbol in prose: <S k="p" />. Renders the symbol's TeX in its role colour; tap shows its meaning.
 import katex from 'katex';
-import { ctx, need, symTex } from '../lib/lessons';
+import { ctx, need, symTex, symRole } from '../lib/lessons';
 interface Props { k: string }
 const { k } = Astro.props;
 const L = ctx(Astro.locals);
 need('symbol', k, L.symbols, L.slug);
 const html = katex.renderToString(symTex(k, L.symbols[k]), { throwOnError: true });
 ---
-<button type="button" class="sym" data-sym={k} set:html={html} />
+<button type="button" class={`sym ${symRole(L.symbols[k])}`} data-sym={k} set:html={html} />

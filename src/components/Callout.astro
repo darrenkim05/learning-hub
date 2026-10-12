@@ -1,0 +1,9 @@
+---
+// Callout box: <Callout kind="picture|why|check|takeaway">text</Callout>. Label comes from kind.
+// Hairline style, neutral colours on purpose: role colours (weight/input/output/loss) mean maths only.
+interface Props { kind: 'picture' | 'why' | 'check' | 'takeaway' }
+const { kind } = Astro.props;
+const label = { picture: 'Picture it', why: 'Why', check: 'Check', takeaway: 'Takeaway' }[kind];
+if (!label) throw new Error(`Callout: unknown kind "${kind}"`);
+---
+<aside class={`co co-${kind}`}><b class="co-k">{label}</b><slot /></aside>
