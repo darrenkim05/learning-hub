@@ -6,8 +6,11 @@ export const LEGACY = {
     blurb: 'The FashionMNIST model from Phase 0, layer by layer.' },
 } as const;
 
-export type Sym = string | { tex: string; means: string };
-export const symTex = (k: string, s: Sym) => (typeof s === 'string' ? k : s.tex);
+export type Role = 'weight' | 'input' | 'output' | 'loss' | 'other';
+export type Sym = string | { tex?: string; means: string; role?: Role };
+export const symTex = (k: string, s: Sym) => (typeof s === 'string' ? k : s.tex ?? k);
+/** CSS class for the symbol's role colour (see global.css). */
+export const symRole = (s: Sym) => `r-${typeof s === 'string' ? 'other' : s.role ?? 'other'}`;
 export const symMeans = (s: Sym) => (typeof s === 'string' ? s : s.means);
 
 /** Lesson data the page puts in Astro.locals so components can validate IDs. */

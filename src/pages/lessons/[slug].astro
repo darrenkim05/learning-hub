@@ -3,7 +3,7 @@ import { getCollection, render } from 'astro:content';
 import katex from 'katex';
 import Base from '../../layouts/Base.astro';
 import Pipeline from '../../components/Pipeline.astro';
-import { LEGACY, symTex, symMeans } from '../../lib/lessons';
+import { LEGACY, symTex, symMeans, symRole } from '../../lib/lessons';
 
 export async function getStaticPaths() {
   const all = await getCollection('lessons');
@@ -28,6 +28,7 @@ const pageData = {
     html: katex.renderToString(symTex(k, s), { throwOnError: true }),
     tex: symTex(k, s),
     means: symMeans(s),
+    cls: symRole(s),
   }])),
 };
 ---

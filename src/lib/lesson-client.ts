@@ -2,7 +2,7 @@
 export interface PageData {
   slug: string; title: string;
   concepts: Record<string, string>;
-  symbols: Record<string, { html: string; tex: string; means: string }>;
+  symbols: Record<string, { html: string; tex: string; means: string; cls: string }>;
 }
 export const page: PageData = JSON.parse(document.getElementById('lesson-data')!.textContent!);
 
@@ -11,7 +11,8 @@ const boxes = [...document.querySelectorAll<HTMLElement>('.pipe .box')];
 const secs = [...document.querySelectorAll<HTMLElement>('section.sec')];
 // Only touches the strip's own horizontal scroll, and only when the section changes: calling
 // scrollIntoView on every scroll event fought the page's own scrolling on phones.
-const strip = document.querySelector<HTMLElement>('.pipe');
+const strip = document.querySelector<HTMLElement>('.pipe-row');
+const pos = document.querySelector<HTMLElement>('.pipe .pos');
 let lastSec: HTMLElement | undefined | null = null;
 let queued = false;
 function light() {
@@ -21,6 +22,7 @@ function light() {
   for (const s of secs) if (s.getBoundingClientRect().top <= y) cur = s;
   if (cur === lastSec) return;
   lastSec = cur;
+  if (pos) pos.textContent = cur ? `${secs.indexOf(cur) + 1} / ${secs.length}` : '';
   const on = new Set((cur?.dataset.stage || '').split(' ').filter(Boolean));
   for (const b of boxes) b.classList.toggle('on', on.has(b.dataset.stage!));
   const first = boxes.find((b) => on.has(b.dataset.stage!));
@@ -39,9 +41,21 @@ document.addEventListener('click', (e) => {
   if (t) {
     const s = page.symbols[t.dataset.sym!];
     if (!s) return;
-    body.innerHTML = `${s.html} &nbsp;${s.means.replace(/</g, '&lt;')}`;
+    body.innerHTML = `<span class="${s.cls}">${s.html}</span> &nbsp;${s.means.replace(/</g, '&lt;')}`;
     pop.classList.add('show');
   } else if (!(e.target as Element).closest('#sym-pop') || (e.target as Element).closest('.x')) {
     pop.classList.remove('show');
   }
 });
+
+// Faint underline on a symbol's first appearance in each section only (not in the symbols row).
+for (const sec of secs) {
+  const seen = new Set<string>();
+  for (const el of sec.querySelectorAll<HTMLElement>('[data-sym]')) {
+    if (el.closest('.symbox')) continue;
+    const k = el.dataset.sym!;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    el.classList.add('first');
+  }
+}
