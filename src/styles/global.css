@@ -126,3 +126,8 @@ a.card:hover,a.card:focus{border-color:var(--line2)}
 .rv-item button,.rv-tools button,.rv-tools label{background:none;border:1px solid var(--line2);border-radius:8px;color:var(--muted);padding:2px 10px;font:13px var(--sans);cursor:pointer}
 .rv-tools{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
 .rv-tools input{display:none}
+/* Markdown tables (e.g. sigma and loss value tables): compact, hairline, scroll sideways on narrow phones. */
+.lesson table{display:block;overflow-x:auto;border-collapse:collapse;margin:14px 0;font-family:var(--sans);font-size:15px;font-variant-numeric:tabular-nums}
+.lesson th,.lesson td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.lesson th:first-child,.lesson td:first-child{text-align:left;color:var(--muted)}
+.lesson th{font-weight:600}
