@@ -76,10 +76,10 @@ The two knobs do different jobs. The weight <S k="w" /> sets which way is "blue"
 
 <Section id="s3" title="Two features: a shaded plane" stage={['model']} concepts={['score']} symbols={['x', 'w', 'b', 'z']} example="same">
 
-Same idea, one more input. Each point now has two coordinates, $\symt{x}{x_1}$ and $\symt{x}{x_2}$, and the score uses two weights:
+Same idea, one more input. Each point now has two coordinates, $\sym{x_1}$ and $\sym{x_2}$, and the score uses two weights:
 
 $$
-\sym{z} = \symt{w}{w_1}\,\symt{x}{x_1} + \symt{w}{w_2}\,\symt{x}{x_2} + \sym{b}
+\sym{z} = \sym{w_1}\,\sym{x_1} + \sym{w_2}\,\sym{x_2} + \sym{b}
 $$
 
 The picture below shades the plane by what the model would say at each spot. Blue means "probably blue", red means "probably red", white is 50/50. The white band is the boundary, where $z = 0$. It is always a **straight line**.
