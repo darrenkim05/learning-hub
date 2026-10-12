@@ -1,0 +1,116 @@
+---
+// Shaded probability plane: p = sigmoid(w1*x1 + w2*x2 + b) over the plane. Drag points, slide the knobs.
+// Goal: slide b until the first red point gets p < 0.5. Start values match the worked numbers in the lesson.
+---
+<div class="plane" data-goal-point="2">
+  <p class="goal"><b>Goal:</b> Slide <i>b</i> until the red point gets <i>p</i> &lt; 0.5. <span class="done" hidden>✓ Done</span></p>
+  <canvas width="380" height="380" aria-label="Probability plane with four data points"></canvas>
+  <p class="read" aria-live="polite"></p>
+  <label class="sl"><span>w<sub>1</sub></span><input type="range" data-k="w1" min="-4" max="4" step="0.1" value="-0.8"><output></output></label>
+  <label class="sl"><span>w<sub>2</sub></span><input type="range" data-k="w2" min="-4" max="4" step="0.1" value="1.5"><output></output></label>
+  <label class="sl"><span>b</span><input type="range" data-k="b" min="-4" max="4" step="0.1" value="1"><output></output></label>
+  <button type="button" class="reset">Reset</button>
+  <p class="hint">Tap a point to select it. Drag it to move it. Blue = true class 1, red = true class 0.</p>
+</div>
+
+<style>
+  .plane { max-width: 380px; margin: 14px auto; }
+  .goal { margin: 0 0 8px; }
+  .done { color: var(--green); font-weight: 700; margin-left: 6px; }
+  canvas { width: 100%; aspect-ratio: 1; display: block; border-radius: 10px; touch-action: none; cursor: grab; border: 1px solid var(--line); }
+  .read { min-height: 3em; margin: 8px 0; font-variant-numeric: tabular-nums; }
+  .sl { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
+  .sl span { width: 28px; font-style: italic; }
+  .sl input { flex: 1; min-height: 32px; }
+  .sl output { width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+  .reset { margin-top: 6px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); }
+  .hint { color: var(--muted); font-size: 0.85em; margin: 6px 0 0; }
+</style>
+
+<script>
+  const R = 2; // plane spans -R..R on both axes
+  const START = [
+    { n: 'blue A', x: 1, y: 1, t: 1 },
+    { n: 'blue B', x: 0.3, y: 1.4, t: 1 },
+    { n: 'red A', x: -1, y: -1, t: 0 },
+    { n: 'red B', x: -0.4, y: -1.5, t: 0 },
+  ];
+  const sig = (z: number) => 1 / (1 + Math.exp(-z));
+  const mix = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+
+  document.querySelectorAll<HTMLElement>('.plane').forEach((root) => {
+    const cv = root.querySelector('canvas')!;
+    const g = cv.getContext('2d')!;
+    const read = root.querySelector<HTMLElement>('.read')!;
+    const done = root.querySelector<HTMLElement>('.done')!;
+    const inputs = [...root.querySelectorAll<HTMLInputElement>('input')];
+    const goalIdx = Number(root.dataset.goalPoint);
+    let pts = START.map((p) => ({ ...p }));
+    let sel = goalIdx;
+    let drag = -1;
+    const K = () => Object.fromEntries(inputs.map((i) => [i.dataset.k!, Number(i.value)])) as { w1: number; w2: number; b: number };
+    const S = cv.width;
+    const px = (v: number) => ((v + R) / (2 * R)) * S;
+    const un = (c: number) => (c / S) * 2 * R - R;
+
+    function draw() {
+      const { w1, w2, b } = K();
+      const cell = 8;
+      for (let i = 0; i < S; i += cell) for (let j = 0; j < S; j += cell) {
+        const p = sig(w1 * un(i + cell / 2) + w2 * -un(j + cell / 2) + b);
+        const col = p >= 0.5 ? mix([255, 255, 255], [70, 130, 230], (p - 0.5) * 2) : mix([255, 255, 255], [235, 80, 70], (0.5 - p) * 2);
+        g.fillStyle = `rgb(${col})`;
+        g.fillRect(i, j, cell, cell);
+      }
+      g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(px(0), 0); g.lineTo(px(0), S); g.moveTo(0, px(0)); g.lineTo(S, px(0)); g.stroke();
+      g.font = '12px sans-serif'; g.fillStyle = 'rgba(0,0,0,.6)';
+      g.fillText('x₁', S - 18, px(0) - 4); g.fillText('x₂', px(0) + 4, 12);
+      pts.forEach((p, i) => {
+        const cx = px(p.x), cy = px(-p.y);
+        g.beginPath(); g.arc(cx, cy, i === sel ? 13 : 10, 0, 7);
+        g.fillStyle = p.t ? '#1f5fd1' : '#c9302c'; g.fill();
+        g.lineWidth = i === sel ? 3 : 2; g.strokeStyle = i === sel ? '#111' : '#fff'; g.stroke();
+        g.fillStyle = '#111'; g.font = 'bold 11px sans-serif';
+        g.fillText(p.n, Math.min(cx + 14, S - 44), cy - 12);
+      });
+    }
+    function update() {
+      const { w1, w2, b } = K();
+      inputs.forEach((i) => (i.nextElementSibling as HTMLOutputElement).value = Number(i.value).toFixed(1));
+      const p = pts[sel];
+      const z = w1 * p.x + w2 * p.y + b;
+      const f = (v: number) => (v < 0 ? `(${v.toFixed(1)})` : v.toFixed(1));
+      read.innerHTML = `<b>${p.n}</b> at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}), true label y = ${p.t}<br>z = ${f(w1)}·${f(p.x)} + ${f(w2)}·${f(p.y)} + ${f(b)} = <b>${z.toFixed(2)}</b>, p = σ(z) = <b>${sig(z).toFixed(2)}</b>`;
+      const gp = pts[goalIdx];
+      done.hidden = !(sig(w1 * gp.x + w2 * gp.y + b) < 0.5);
+      draw();
+    }
+    function pos(e: PointerEvent) {
+      const r = cv.getBoundingClientRect();
+      return { x: un(((e.clientX - r.left) / r.width) * S), y: -un(((e.clientY - r.top) / r.height) * S) };
+    }
+    cv.addEventListener('pointerdown', (e) => {
+      const m = pos(e);
+      let best = -1, bd = 0.35; // pick radius in plane units (~ finger size)
+      pts.forEach((p, i) => { const d = Math.hypot(p.x - m.x, p.y - m.y); if (d < bd) { bd = d; best = i; } });
+      if (best >= 0) { sel = best; drag = best; cv.setPointerCapture(e.pointerId); update(); }
+    });
+    cv.addEventListener('pointermove', (e) => {
+      if (drag < 0) return;
+      const m = pos(e);
+      pts[drag].x = Math.max(-R + 0.1, Math.min(R - 0.1, m.x));
+      pts[drag].y = Math.max(-R + 0.1, Math.min(R - 0.1, m.y));
+      update();
+    });
+    const end = () => { drag = -1; };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+    inputs.forEach((i) => i.addEventListener('input', update));
+    root.querySelector('.reset')!.addEventListener('click', () => {
+      pts = START.map((p) => ({ ...p })); sel = goalIdx;
+      inputs.forEach((i) => (i.value = i.defaultValue));
+      update();
+    });
+    update();
+  });
+</script>
