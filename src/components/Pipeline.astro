@@ -1,0 +1,13 @@
+---
+// Sticky "where am I" strip. Boxes light up for the current section's `stage` (see lesson-client.ts).
+interface Props { stages: string[] }
+const { stages } = Astro.props;
+---
+<nav class="pipe" aria-label="Pipeline">
+  {stages.map((s, i) => (
+    <>
+      {i > 0 && <span class="arr">→</span>}
+      <span class="box" data-stage={s}>{s}</span>
+    </>
+  ))}
+</nav>

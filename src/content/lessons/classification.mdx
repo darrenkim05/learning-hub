@@ -1,0 +1,32 @@
+---
+title: Classification
+blurb: Same recipe, new problem. Predicting a category instead of a number.
+order: 1
+prereqs: [nn-basics]
+pipeline: [data, model, prediction, loss, optimiser]
+concepts:
+  score: "A weighted sum z = w·x + b; its sign says which side of the line a point is on"
+  sigmoid: "Squashes any score into a probability between 0 and 1"
+symbols:
+  z: "score: the weighted sum before squashing"
+  w: "weight: how much the input pushes the score"
+  x: "input feature of one point"
+  b: "bias: shifts the boundary"
+  p: "model's probability the point is blue"
+  y: "true label: 1 blue, 0 red"
+ref: "Bishop, PRML §4.3"
+---
+import Section from '../../components/Section.astro';
+import S from '../../components/S.astro';
+
+<Section id="s1" title="A score, then a probability" stage={['model', 'prediction']} concepts={['score', 'sigmoid']} symbols={['z', 'w', 'x', 'b', 'p']} example="new">
+
+Stub section. The model computes a score <S k="z" /> from the input <S k="x" />, then turns it into a probability <S k="p" />:
+
+$$
+\sym{z} = \sym{w}\,\sym{x} + \sym{b}, \qquad \sym{p} = \sigma(\sym{z}) = \frac{1}{1 + e^{-\sym{z}}}
+$$
+
+Tap any dotted symbol to see what it means. Scroll and watch the strip at the top: this section changes the **model** and the **prediction**.
+
+</Section>

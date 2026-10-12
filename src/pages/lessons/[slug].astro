@@ -1,0 +1,50 @@
+---
+import { getCollection, render } from 'astro:content';
+import katex from 'katex';
+import Base from '../../layouts/Base.astro';
+import Pipeline from '../../components/Pipeline.astro';
+import { LEGACY, symTex, symMeans } from '../../lib/lessons';
+
+export async function getStaticPaths() {
+  const all = await getCollection('lessons');
+  const known = new Set([...all.map((l) => l.id), ...Object.keys(LEGACY)]);
+  for (const l of all)
+    for (const p of l.data.prereqs)
+      if (!known.has(p)) throw new Error(`[${l.id}] unknown prereq "${p}"`);
+  return all.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const d = entry.data;
+Astro.locals.lesson = { slug: entry.id, pipeline: d.pipeline, concepts: d.concepts, symbols: d.symbols };
+const { Content } = await render(entry);
+
+// Page data for client scripts (symbol popover, store, tutor).
+const pageData = {
+  slug: entry.id,
+  title: d.title,
+  concepts: d.concepts,
+  symbols: Object.fromEntries(Object.entries(d.symbols).map(([k, s]) => [k, {
+    html: katex.renderToString(symTex(k, s), { throwOnError: true }),
+    tex: symTex(k, s),
+    means: symMeans(s),
+  }])),
+};
+---
+<Base title={d.title}>
+  <Pipeline slot="strip" stages={d.pipeline} />
+  <h1>{d.title}</h1>
+  {d.ref && <p class="muted small">Reference: {d.ref}</p>}
+  <article class="lesson"><Content /></article>
+  <div slot="end">
+    <div class="sym-pop" id="sym-pop" role="dialog" aria-live="polite">
+      <button class="x" type="button" aria-label="Close">×</button>
+      <div class="body"></div>
+    </div>
+    <script type="application/json" id="lesson-data" set:html={JSON.stringify(pageData)} />
+  </div>
+</Base>
+
+<script>
+  import '../../lib/lesson-client';
+</script>

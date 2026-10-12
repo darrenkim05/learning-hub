@@ -3,7 +3,7 @@
 Personal site of interactive lessons for hard university and masters STEM topics (engineering maths, physics, control, ML), aimed at **first-time learning** of new concepts, with an AI tutor. The owner, Darren, is the only user and reads on a phone.
 
 ## Status
-- **1.0** (live): hand-written HTML in `explainers/`, built from `src/` + `kit/`. Legacy: don't extend it.
+- **1.0** (legacy): built pages now served from `public/legacy/`; old sources in `src/*.html` + `kit/` (deleted in #6). Don't extend it.
 - **2.0** (in progress): Astro + MDX rebuild. Plan: `research/PLAN-2.0.md`. Decisions: `research/DECISIONS.md`. Work items: issues #2–#6, done in order (tracker #1).
 
 ## How to work
@@ -14,7 +14,10 @@ Personal site of interactive lessons for hard university and masters STEM topics
 - Never put API keys in the repo. The tutor key and passcode live in Vercel env vars.
 
 ## Commands
-Filled in by #2. Planned: `npm run dev`, `npm run build`, `npm run check` (SymPy maths checks, lessons only).
+- `npm run dev`: local dev server.
+- `npm run build`: production build (Vercel adapter). Unknown concept, symbol, stage or prereq IDs fail it.
+- `npm run check [slug]`: runs `checks/<slug>.py` (SymPy; `pip install sympy`). Run before deploy; not a build gate.
+- Lessons: `src/content/lessons/<slug>.mdx`; schema `src/content.config.ts`; 1.0 pages in `public/legacy/`.
 
 ## Teaching rules (all lessons)
 - Each section introduces at most 2-3 new ideas, puts the picture before the formula, and says whether it's the same example or a new one.

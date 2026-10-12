@@ -1,0 +1,24 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { LEGACY } from '../lib/lessons';
+const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b.data.order);
+const titleOf = (slug: string) =>
+  lessons.find((l) => l.id === slug)?.data.title ?? (LEGACY as Record<string, { title: string }>)[slug]?.title ?? slug;
+---
+<Base title="Learning Hub">
+  <h1>Learning Hub</h1>
+  <p class="muted">Interactive lessons, built to be read on a phone.</p>
+  <div class="track">Lessons</div>
+  {lessons.map((l) => (
+    <a class="card" href={`/lessons/${l.id}/`}>
+      <b>{l.data.title}</b>
+      {l.data.blurb && <span>{l.data.blurb}</span>}
+      {l.data.prereqs.length > 0 && <div class="pre">Needs: {l.data.prereqs.map(titleOf).join(', ')}</div>}
+    </a>
+  ))}
+  <div class="track">1.0 explainers</div>
+  {Object.values(LEGACY).map((l) => (
+    <a class="card" href={l.href}><b>{l.title}</b><span>{l.blurb}</span></a>
+  ))}
+</Base>
