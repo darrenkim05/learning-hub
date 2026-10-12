@@ -27,6 +27,7 @@ import Quiz from '../../components/Quiz.astro';
 import NextLine from '../../components/NextLine.astro';
 import PlaneWidget from '../../components/PlaneWidget.astro';
 import Callout from '../../components/Callout.astro';
+import Figure from '../../components/Figure.astro';
 
 <Section id="s1" title="Same recipe, new problem" stage={['model', 'loss']} concepts={['recipe']} example="new">
 
@@ -37,6 +38,17 @@ Before, the model predicted a **number** (a house price, say). Now each point is
 The recipe is four boxes in a row: data, model, loss, optimiser. The strip at the top lights up the boxes each section is about. Watch which ones change.
 
 </Callout>
+
+<Figure task="label" alt="Four boxes in a row: data, model, loss, optimiser" prompt="A squashing step turns a score into a probability. Tap the box it belongs in." answer="model" hint="Not that one. Ask which box produces the prediction: the squashing step is the last part of it." reveal="The model. Its output must now be a probability, so it gets one extra step: score, then squash. The loss and optimiser are unchanged in shape.">
+<svg viewBox="0 0 320 90">
+  <g data-part="data" class="fg-part" tabindex="0" role="button" aria-label="data"><rect class="fg-box" x="6" y="18" width="66" height="44" rx="6" /><text x="39" y="38" text-anchor="middle">data</text><text x="39" y="54" text-anchor="middle"><tspan class="r-input">x</tspan></text></g>
+  <g data-part="model" class="fg-part" tabindex="0" role="button" aria-label="model"><rect class="fg-box" x="86" y="18" width="66" height="44" rx="6" /><text x="119" y="38" text-anchor="middle">model</text><text x="119" y="54" text-anchor="middle"><tspan class="r-weight">w, b</tspan></text></g>
+  <g data-part="loss" class="fg-part" tabindex="0" role="button" aria-label="loss"><rect class="fg-box" x="166" y="18" width="66" height="44" rx="6" /><text x="199" y="38" text-anchor="middle">loss</text><text x="199" y="54" text-anchor="middle"><tspan class="r-loss">L</tspan></text></g>
+  <g data-part="optimiser" class="fg-part" tabindex="0" role="button" aria-label="optimiser"><rect class="fg-box" x="246" y="18" width="68" height="44" rx="6" /><text x="280" y="38" text-anchor="middle">optimiser</text><text x="280" y="54" text-anchor="middle"><tspan class="r-weight">w, b</tspan></text></g>
+  <path class="fg-line" d="M72 40 H86 M152 40 H166 M232 40 H246" />
+  <text x="160" y="84" text-anchor="middle">each box feeds the next</text>
+</svg>
+</Figure>
 
 - **Model changes.** A straight-line formula can output 7 or -3. Those are not probabilities, so we add a squashing step.
 - **Loss changes.** Squared error suits numbers. For probabilities there is a better measure.
@@ -59,13 +71,21 @@ Which box of the pipeline stays exactly the same when we move from predicting a 
 
 Start with one input <S k="x" />, say a measurement, and two classes along a line. Red points sit on the left, blue on the right.
 
-<svg viewBox="0 0 320 70" role="img" aria-label="Number line with red points left of zero and blue points right of zero" style="width:100%;max-width:380px;display:block;margin:10px auto">
-  <line x1="10" y1="40" x2="310" y2="40" stroke="currentColor" strokeWidth="2" />
-  <line x1="160" y1="22" x2="160" y2="58" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" />
-  <circle cx="50" cy="40" r="9" fill="#c9302c" /><circle cx="95" cy="40" r="9" fill="#c9302c" /><circle cx="135" cy="40" r="9" fill="#c9302c" />
-  <circle cx="190" cy="40" r="9" fill="#1f5fd1" /><circle cx="235" cy="40" r="9" fill="#1f5fd1" /><circle cx="285" cy="40" r="9" fill="#1f5fd1" />
-  <text x="160" y="16" textAnchor="middle" fontSize="12" fill="currentColor">z = 0</text>
+<Figure task="predict" alt="Number line for the feature x from 0 to 4 with three red points on the left, three blue points on the right and a dashed line at x = 2 marked z = 0" prompt="A model uses $\htmlClass{r-output}{z} = \htmlClass{r-weight}{w}\htmlClass{r-input}{x} + \htmlClass{r-weight}{b}$ with $\htmlClass{r-weight}{w} = 1$ and $\htmlClass{r-weight}{b} = -2$. Where on the line does it put its boundary, the place where $\htmlClass{r-output}{z} = 0$?" choices={[
+  { text: 'At $x = -2$', why: 'That is the value of b itself, but b is the score when x = 0, not the place where the score is 0.' },
+  { text: 'At $x = 0$', why: 'At x = 0 the score is b = -2, which is negative (red side), not 0.' },
+  { text: 'At $x = 1$', why: 'At x = 1 the score is 1 - 2 = -1, still negative.' },
+  { text: 'At $x = 2$', ok: true, why: 'Score = 1(2) - 2 = 0. Solve wx + b = 0 for x and you get x = -b/w.' },
+]} reveal="The dashed line sits at $x = 2$. Red points have $z < 0$, blue points $z > 0$. Making $b$ bigger or smaller slides this line left or right.">
+<svg viewBox="0 0 320 96">
+  <line class="fg-line" x1="20" y1="48" x2="300" y2="48" />
+  <line class="r-output" x1="160" y1="22" x2="160" y2="74" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" />
+  <g fill="#c9302c"><circle cx="64" cy="48" r="9" /><circle cx="100" cy="48" r="9" /><circle cx="136" cy="48" r="9" /></g>
+  <g fill="#1f5fd1"><circle cx="190" cy="48" r="9" /><circle cx="226" cy="48" r="9" /><circle cx="262" cy="48" r="9" /></g>
+  <g class="r-input"><text x="40" y="90" text-anchor="middle">0</text><text x="100" y="90" text-anchor="middle">1</text><text x="160" y="90" text-anchor="middle">2</text><text x="220" y="90" text-anchor="middle">3</text><text x="280" y="90" text-anchor="middle">4</text><text x="304" y="52" text-anchor="end">x</text></g>
+  <text class="r-output" x="160" y="14" text-anchor="middle">z = 0</text>
 </svg>
+</Figure>
 
 The model scores each point with a weighted sum, then looks at the sign:
 
@@ -93,6 +113,20 @@ $$
 
 The picture below shades the plane by what the model would say at each spot. Blue means "probably blue", red means "probably red", white is 50/50. The white band is the boundary, where $\sym{z} = 0$. It is always a **straight line**.
 
+<Figure task="whatif" alt="A plane with red and blue points, a solid boundary line, and an arrow w perpendicular to it pointing up and to the left. After the reveal a second dashed line appears lower down for the larger bias" prompt="The solid line is $\htmlClass{r-output}{z} = 0$ for $\htmlClass{r-weight}{w_1} = -0.8$, $\htmlClass{r-weight}{w_2} = 1.5$, $\htmlClass{r-weight}{b} = 1$. The arrow is the weight vector, always at right angles to the line. Now raise $\htmlClass{r-weight}{b}$ to 2. Which way does the line move, and does its tilt change?" reveal="It slides down and to the right (against the arrow) and keeps the same tilt. The weights set the tilt and the arrow; the bias only shifts the line. Try it in the widget below.">
+<svg viewBox="0 0 320 220">
+  <line class="fg-line" x1="20" y1="110" x2="300" y2="110" /><line class="fg-line" x1="160" y1="10" x2="160" y2="210" />
+  <line class="r-output" stroke="currentColor" stroke-width="2.5" x1="64" y1="188" x2="256" y2="85" />
+  <line class="fg-reveal r-weight" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 4" x1="64" y1="215" x2="256" y2="112" />
+  <text class="fg-reveal r-weight" x="232" y="190">b = 2</text>
+  <circle cx="200" cy="70" r="6" fill="#1f5fd1" /> <circle cx="100" cy="78" r="6" fill="#1f5fd1" /> <circle cx="160" cy="42" r="6" fill="#1f5fd1" /> <circle cx="120" cy="150" r="6" fill="#c9302c" /> <circle cx="220" cy="166" r="6" fill="#c9302c" /> <circle cx="168" cy="174" r="6" fill="#c9302c" />
+  <line class="r-weight" stroke="currentColor" stroke-width="2.5" x1="183" y1="129" x2="160" y2="84" />
+  <path class="r-weight" fill="currentColor" d="M157 92 L160 80 L168 90 Z" />
+  <text class="r-weight" x="140" y="80">w</text>
+  <text class="r-output" x="262" y="62">z = 0</text>
+</svg>
+</Figure>
+
 Play first, read after. Use the sliders, and drag the points around.
 
 <PlaneWidget />
@@ -116,6 +150,21 @@ $$
 | score $z$ | -4 | -2 | 0 | 2 | 4 |
 |---|---|---|---|---|---|
 | $\sigma(z)$ | 0.02 | 0.12 | 0.50 | 0.88 | 0.98 |
+
+<Figure task="predict" alt="S-shaped sigmoid curve: flat near 0 on the left, rising steeply through 0.5 at z = 0, flattening just under 1 on the right" prompt="Here is $\htmlClass{r-output}{p} = \sigma(\htmlClass{r-output}{z})$. As the score $\htmlClass{r-output}{z}$ gets very large, say 100, what does $\htmlClass{r-output}{p}$ do?" choices={[
+  { text: 'It keeps growing past 1', why: 'p is a probability. In 1/(1 + e^-z) the denominator is always bigger than 1, so p can never reach 1, let alone pass it.' },
+  { text: 'It climbs in a straight line', why: 'The table shows the gains shrinking: 0.50 to 0.88 for the first 2 units of z, but only 0.88 to 0.98 for the next 2.' },
+  { text: 'It levels off just below 1', ok: true, why: 'e^-z shrinks towards 0, so p approaches 1 but never reaches it.' },
+  { text: 'It swings back down towards 0', why: 'e^-z only gets smaller as z grows, so p only gets closer to 1. Nothing pulls it back.' },
+]} reveal="An S-shaped curve: steep near $z = 0$ (where $p = 0.5$) and flat at both ends. Large scores all look alike to the model: very confident.">
+<svg viewBox="0 0 320 190">
+  <line class="fg-line" x1="16" y1="160" x2="304" y2="160" /><line class="fg-line" x1="160" y1="20" x2="160" y2="165" />
+  <line class="fg-line" stroke-dasharray="3 3" x1="16" y1="30" x2="304" y2="30" /><line class="fg-line" stroke-dasharray="3 3" x1="16" y1="95" x2="304" y2="95" />
+  <path class="fg-st r-output" d="M16.0 159.7 L28.0 159.5 L40.0 159.1 L52.0 158.6 L64.0 157.7 L76.0 156.2 L88.0 153.8 L100.0 150.1 L112.0 144.5 L124.0 136.3 L136.0 125.0 L148.0 110.9 L160.0 95.0 L172.0 79.1 L184.0 65.0 L196.0 53.7 L208.0 45.5 L220.0 39.9 L232.0 36.2 L244.0 33.8 L256.0 32.3 L268.0 31.4 L280.0 30.9 L292.0 30.5 L304.0 30.3" />
+  <g class="r-output"><text x="20" y="24">p = 1</text><text x="20" y="89">p = 0.5</text><text x="296" y="182" text-anchor="end">z</text><text x="168" y="16">p</text></g>
+  <text x="160" y="178" text-anchor="middle">0</text>
+</svg>
+</Figure>
 
 <Callout kind="why">
 
@@ -168,6 +217,18 @@ $$
 
 The model leans blue for a red point. It is wrong. Reset the widget above and select red A to see exactly these numbers. Sliding $b$ below 0.7 fixes it: that is where $z$ crosses 0.
 
+<Figure task="whatif" alt="The plane with Blue A at (1, 1) and Red A at (-1, -1) and the boundary line z = 0 between them. After the reveal a dashed line for b = 0.7 appears running through Red A" prompt="Red A is on the wrong side. Lower $\htmlClass{r-weight}{b}$ from 1 to 0.7 and keep $\htmlClass{r-weight}{w}$. Does Blue A stay correct? Does its $\htmlClass{r-output}{p}$ go up or down, and roughly by how much?" reveal="Blue A: $\htmlClass{r-output}{z} = -0.8 + 1.5 + 0.7 = 1.4$, so $\htmlClass{r-output}{p} = \sigma(1.4) = 0.80$. It stays correct, a bit less sure (0.85 before). The new dashed line passes exactly through Red A, so Red A's $\htmlClass{r-output}{p}$ is 0.5.">
+<svg viewBox="0 0 320 220">
+  <line class="fg-line" x1="20" y1="110" x2="300" y2="110" /><line class="fg-line" x1="160" y1="10" x2="160" y2="210" />
+  <line class="r-output" stroke="currentColor" stroke-width="2.5" x1="64" y1="188" x2="256" y2="85" />
+  <line class="fg-reveal r-weight" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 4" x1="64" y1="180" x2="256" y2="77" />
+  <text class="fg-reveal r-weight" x="272" y="100" text-anchor="end">b = 0.7</text>
+  <circle cx="200" cy="70" r="6" fill="#1f5fd1" /> <circle cx="120" cy="150" r="6" fill="#c9302c" />
+  <text x="210" y="74">Blue A</text><text x="110" y="146" text-anchor="end">Red A</text>
+  <text class="r-output" x="40" y="26">z = 0 at b = 1</text>
+</svg>
+</Figure>
+
 </Section>
 
 <Section id="s6" title="Loss: cross-entropy" stage={['loss']} concepts={['cross-entropy']} symbols={['L', 'p', 'y']} example="same">
@@ -181,6 +242,20 @@ $$
 | prob. of true class | 1 | 0.9 | 0.5 | 0.1 | 0.01 |
 |---|---|---|---|---|---|
 | loss | 0 | 0.11 | 0.69 | 2.30 | 4.61 |
+
+<Figure task="predict" alt="Cross-entropy loss against the probability given to the true class: very high near 0, dropping fast, then levelling to 0 at 1" prompt="Plot the loss $\htmlClass{r-loss}{L} = -\ln(q)$ against $q$, the probability the model gave the true class. From the table, $q = 1$ costs 0 and $q = 0.5$ costs 0.69. What shape is the curve as $q$ heads to 0?" choices={[
+  { text: 'A straight line down from the top-left to 0 at q = 1', why: 'A straight line would charge 2.3 for q = 0.5 (halfway), but the table says 0.69.' },
+  { text: 'Flat, then a sudden drop near q = 0', why: 'It is the other way round: the loss is small when q is large and only gets big as q falls.' },
+  { text: 'Gentle at first, then shooting up as q nears 0', ok: true, why: 'Loss rises slowly from 0 at q = 1, then without limit as q approaches 0 (4.61 at q = 0.01).' },
+]} reveal="Confident and wrong is expensive: the curve has no ceiling as $q \to 0$. That steep wall is what pushes the model to stop bluffing.">
+<svg viewBox="0 0 320 190">
+  <line class="fg-line" x1="40" y1="160" x2="300" y2="160" /><line class="fg-line" x1="40" y1="14" x2="40" y2="160" />
+  <path class="fg-st r-loss" d="M45.0 42.6 L46.2 49.3 L52.5 70.1 L58.8 82.3 L65.0 90.9 L71.2 97.6 L77.5 103.1 L83.8 107.7 L90.0 111.7 L96.2 115.3 L102.5 118.4 L108.8 121.3 L115.0 123.9 L121.2 126.3 L127.5 128.5 L133.8 130.6 L140.0 132.5 L146.2 134.3 L152.5 136.0 L158.8 137.7 L165.0 139.2 L171.2 140.7 L177.5 142.1 L183.8 143.4 L190.0 144.7 L196.2 145.9 L202.5 147.1 L208.8 148.2 L215.0 149.3 L221.2 150.4 L227.5 151.4 L233.8 152.4 L240.0 153.3 L246.2 154.2 L252.5 155.1 L258.8 156.0 L265.0 156.8 L271.2 157.7 L277.5 158.5 L283.8 159.2 L290.0 160.0" />
+  <circle class="r-loss" cx="165" cy="139" r="4" /><circle class="r-loss" cx="65" cy="91" r="4" />
+  <g class="r-loss"><text x="48" y="22">L</text><text x="172" y="134">0.69 at q = 0.5</text><text x="72" y="86">2.30 at q = 0.1</text></g>
+  <text x="40" y="176" text-anchor="middle">0</text><text x="290" y="176" text-anchor="middle">1</text><text x="165" y="182" text-anchor="middle">prob. of true class, q</text>
+</svg>
+</Figure>
 
 <Callout kind="picture">
 
@@ -220,6 +295,18 @@ Which prediction costs more under cross-entropy: **A**, or **B**?
 <Section id="s7" title="The gradient: error times input" stage={['loss', 'optimiser']} concepts={['gradient']} symbols={['L', 'p', 'y', 'z', 'w', 'b']} example="same">
 
 Gradient descent needs the slope of $L$ for each knob. Let's derive it with the chain rule, one step at a time. First the slope of $L$ with respect to $p$.
+
+<Figure task="label" alt="Chain of boxes from the weights, inputs and bias through z, then p, then the loss L, with the slope carried backwards from L" prompt="We carry the slope backwards from $\htmlClass{r-loss}{L}$, multiplying as we go. Tap the box where the messy fractions cancel and the slope becomes just $\htmlClass{r-output}{p} - \htmlClass{r-other}{y}$." answer="z" hint="Not that box. The fractions $-y/p + (1-y)/(1-p)$ sit at one box. Go one step further back and they cancel." reveal="At $\htmlClass{r-output}{z}$: the slope there is $\partial L/\partial z = \htmlClass{r-output}{p} - \htmlClass{r-other}{y}$. Beyond it, each weight just multiplies by its input, giving $(p - y)x$">
+<svg viewBox="0 0 320 110">
+  <g data-part="w" class="fg-part" tabindex="0" role="button" aria-label="w, x and b"><rect class="fg-box" x="6" y="30" width="62" height="44" rx="6" /><text x="37" y="49" text-anchor="middle"><tspan class="r-weight">w</tspan> <tspan class="r-input">x</tspan></text><text x="37" y="65" text-anchor="middle"><tspan class="r-weight">b</tspan></text></g>
+  <g data-part="z" class="fg-part" tabindex="0" role="button" aria-label="z"><rect class="fg-box" x="88" y="30" width="62" height="44" rx="6" /><text x="119" y="57" text-anchor="middle" class="r-output">z</text></g>
+  <g data-part="p" class="fg-part" tabindex="0" role="button" aria-label="p"><rect class="fg-box" x="170" y="30" width="62" height="44" rx="6" /><text x="201" y="57" text-anchor="middle" class="r-output">p</text></g>
+  <g data-part="L" class="fg-part" tabindex="0" role="button" aria-label="L"><rect class="fg-box" x="252" y="30" width="62" height="44" rx="6" /><text x="283" y="57" text-anchor="middle" class="r-loss">L</text></g>
+  <path class="fg-line" d="M68 52 H88 M150 52 H170 M232 52 H252" />
+  <text x="160" y="98" text-anchor="middle">slope flows right to left</text>
+  <text x="79" y="26" text-anchor="middle" font-size="10">x</text><text x="160" y="26" text-anchor="middle" font-size="10">p(1-p)</text><text x="242" y="26" text-anchor="middle" font-size="10">dL/dp</text>
+</svg>
+</Figure>
 
 $$
 \sym{L} = -\big[\sym{y}\ln \sym{p} + (1-\sym{y})\ln(1-\sym{p})\big]
