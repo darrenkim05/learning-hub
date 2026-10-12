@@ -17,7 +17,7 @@
   .plane { max-width: 380px; margin: 14px auto; }
   .goal { margin: 0 0 8px; }
   .done { color: var(--green); font-weight: 700; margin-left: 6px; }
-  canvas { width: 100%; aspect-ratio: 1; display: block; border-radius: 10px; touch-action: none; cursor: grab; border: 1px solid var(--line); }
+  canvas { width: 100%; aspect-ratio: 1; display: block; border-radius: 10px; touch-action: pan-y; cursor: grab; border: 1px solid var(--line); }
   .read { min-height: 3em; margin: 8px 0; font-variant-numeric: tabular-nums; }
   .sl { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
   .sl span { width: 28px; font-style: italic; }
@@ -86,14 +86,21 @@
       done.hidden = !(sig(w1 * gp.x + w2 * gp.y + b) < 0.5);
       draw();
     }
-    function pos(e: PointerEvent) {
+    function pos(e: { clientX: number; clientY: number }) {
       const r = cv.getBoundingClientRect();
       return { x: un(((e.clientX - r.left) / r.width) * S), y: -un(((e.clientY - r.top) / r.height) * S) };
     }
-    cv.addEventListener('pointerdown', (e) => {
+    function hit(e: { clientX: number; clientY: number }) {
       const m = pos(e);
       let best = -1, bd = 0.35; // pick radius in plane units (~ finger size)
       pts.forEach((p, i) => { const d = Math.hypot(p.x - m.x, p.y - m.y); if (d < bd) { bd = d; best = i; } });
+      return best;
+    }
+    // The canvas lets the page scroll (touch-action: pan-y); only a touch that starts on a point is captured for dragging.
+    cv.addEventListener('touchstart', (e) => { if (e.touches.length === 1 && hit(e.touches[0]) >= 0) e.preventDefault(); }, { passive: false });
+    cv.addEventListener('touchmove', (e) => { if (drag >= 0) e.preventDefault(); }, { passive: false });
+    cv.addEventListener('pointerdown', (e) => {
+      const best = hit(e);
       if (best >= 0) { sel = best; drag = best; cv.setPointerCapture(e.pointerId); update(); }
     });
     cv.addEventListener('pointermove', (e) => {

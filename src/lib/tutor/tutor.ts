@@ -110,6 +110,10 @@ async function send(text: string) {
   t.push({ role: 'user', content: text });
   save(id, t); busy = true; draw();
   const fail = (msg: string) => { const u = load(id).filter((m) => !m.err); u.push({ role: 'assistant', content: msg, err: true }); save(id, u); };
+  if (!store.passcode) {
+    fail('Enter your tutor passcode first (it opens below ⚙), then ask again.');
+    cfg.classList.add('show'); busy = false; draw(); return;
+  }
   try {
     if (!navigator.onLine) throw new Error('offline');
     const turns = t.filter((m) => !m.err).slice(-5).map(({ role, content }) => ({ role, content }));
