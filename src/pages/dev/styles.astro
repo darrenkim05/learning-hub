@@ -1,0 +1,63 @@
+---
+// Dev-only: three style sketches of one lesson section. ?o=a|b|c shows just one.
+import 'katex/dist/katex.min.css';
+import '../../styles/dev-styles.css';
+import { displayTex, inlineTex } from '../../lib/tex';
+
+// Role -> CSS class via \htmlClass, so each option recolours with CSS only.
+const r = (cls: string, tex: string) => `\\htmlClass{${cls}}{${tex}}`;
+const W1 = r('w', 'w_1'), W2 = r('w', 'w_2'), B = r('w', 'b');
+const X1 = r('x', 'x_1'), X2 = r('x', 'x_2');
+const Z = r('o', 'z'), P = r('o', 'p'), L = r('l', 'L');
+const eq1 = displayTex(`${Z} = ${W1}${X1} + ${W2}${X2} + ${B}`);
+const eq2 = displayTex(`${P} = \\sigma(${Z}) = \\frac{1}{1+e^{-${Z}}}`);
+const eq3 = displayTex(`${L} = -\\big[y\\ln ${P} + (1-y)\\ln(1-${P})\\big]`);
+const t = (tex: string) => inlineTex(`$${tex}$`);
+const sym = [
+  [`${W1},${W2}`, 'weights: how much each feature counts'],
+  [B, 'bias: the score when both features are 0'],
+  [`${X1},${X2}`, 'inputs: the two features'],
+  [Z, 'score, any real number'],
+  [P, 'probability of class 1, between 0 and 1'],
+  [L, 'loss: how wrong one guess is'],
+].map(([tex, d]) => ({ h: t(tex), d }));
+const opts = [
+  { id: 'a', name: 'A · 1.0 polished: coloured boxes, bordered panels', kick: '§2 · THE MODEL' },
+  { id: 'b', name: 'B · calm paper-like dark: serif, hairlines, muted colour', kick: '§2 · The model' },
+  { id: 'c', name: 'C · bold cards: chunky, filled blocks, segmented progress', kick: '§2 · THE MODEL' },
+];
+---
+<html lang="en"><head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Style options</title></head>
+<body class="ds">
+{opts.map((o) => (
+  <section class={`opt opt-${o.id}`} id={o.id}>
+    <div class="tag">{o.name}</div>
+    <div class="bar"><div class="dots"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><span>3 / 6</span></div></div>
+    <div class="kick">{o.kick}</div>
+    <h2>Turn two features into a probability</h2>
+    <details class="syms">
+      <summary><span set:html={t(`${W1},${W2},${B},${X1},${X2},${Z},${P}`)} /><span>symbols</span></summary>
+      <div class="grid">{sym.map((s) => <div><span set:html={s.h} /> · {s.d}</div>)}</div>
+    </details>
+    <div class="co pic"><b class="k">Picture it</b>A judge adds up votes. Each feature casts a vote, and the weight says how loud it is.</div>
+    <p>First the <span class="w">weights</span> scale the <span class="x">inputs</span> into one score:</p>
+    <div class="eq" set:html={eq1} />
+    <p>Here <span class="first" set:html={t(W1)} /> is a <span class="w">weight</span>, <span set:html={t(X1)} /> an <span class="x">input</span>, and <span set:html={t(Z)} /> is the <span class="o">output</span> so far. Then squash it into a probability:</p>
+    <div class="eq" set:html={eq2} />
+    <div class="co why"><b class="k">Why</b>A raw score can be -50 or 900. A probability must sit between 0 and 1, so <span set:html={t('\\sigma')} /> bends the whole line into that range.</div>
+    <p>Training nudges <span set:html={t(W1)} /> and <span set:html={t(W2)} /> to shrink the <span class="l">loss</span> <span set:html={t(L)} />:</p>
+    <div class="eq" set:html={eq3} />
+    <div class="co chk"><b class="k">Check</b>If <span set:html={t(`${Z}=0`)} />, what is <span set:html={t(P)} />?
+      <button class="ch" type="button">0, because the score is zero</button>
+      <button class="ch" type="button">0.5, because <span set:html={t('e^{0}=1')} /></button>
+    </div>
+    <div class="co tk"><b class="k">Takeaway</b>Score first, squash second: <span set:html={t(Z)} /> then <span set:html={t(P)} />.</div>
+  </section>
+))}
+<script is:inline>
+  var o=new URLSearchParams(location.search).get('o');
+  if(o)document.querySelectorAll('.opt').forEach(function(s){if(s.id!==o)s.remove()});
+</script>
+</body></html>
