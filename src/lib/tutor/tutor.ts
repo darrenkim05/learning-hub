@@ -45,6 +45,7 @@ const fmt = (s: string) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace
 let root: HTMLElement, thread: HTMLElement, quote: HTMLElement, input: HTMLInputElement, cfg: HTMLElement;
 let ctx: Ctx | undefined;
 let busy = false;
+let pendingQ: string | undefined; // question waiting for the passcode to be entered
 
 const skey = (id: string) => `lh-tutor:${page.slug}:${id}`;
 function load(id: string): Turn[] { try { return JSON.parse(sessionStorage.getItem(skey(id)) || '[]'); } catch { return []; } }
@@ -63,7 +64,12 @@ function build() {
   const pc = cfg.querySelector('input')!;
   root.querySelector('.close')!.addEventListener('click', () => root.classList.remove('show'));
   root.querySelector('.gear')!.addEventListener('click', () => { pc.value = store.passcode; cfg.classList.toggle('show'); });
-  cfg.querySelector('button')!.addEventListener('click', () => { store.passcode = pc.value.trim(); cfg.classList.remove('show'); });
+  cfg.querySelector('button')!.addEventListener('click', async () => {
+    store.passcode = pc.value.trim();
+    if (!store.passcode) return;
+    cfg.classList.remove('show');
+    if (pendingQ) { const q = pendingQ; pendingQ = undefined; katex ??= (await import('katex')).default; void send(q); }
+  });
   root.querySelector('form')!.addEventListener('submit', (e) => {
     e.preventDefault();
     const v = input.value.trim();
@@ -96,6 +102,14 @@ async function open(sel: Sel) {
   ctx = { sel, mode: hint ? 'hint' : 'explain', sec };
   quote.textContent = sel.text.length > 200 ? sel.text.slice(0, 200) + '…' : sel.text;
   root.classList.add('show');
+  if (!store.passcode) {
+    // First use on this device: ask for the passcode, then send the question automatically.
+    pendingQ = hint ? `Give me a hint on: "${sel.text}"` : `Explain this: "${sel.text}"`;
+    thread.innerHTML = '<div class="m">Enter your tutor passcode above to start. It is saved on this device, so you only do this once.</div>';
+    cfg.classList.add('show');
+    cfg.querySelector('input')!.focus();
+    return;
+  }
   katex ??= (await import('katex')).default;
   const t = load(sel.sectionId);
   // New selection in an existing thread: add it as a fresh question.

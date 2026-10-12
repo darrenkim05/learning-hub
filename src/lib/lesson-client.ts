@@ -9,16 +9,26 @@ export const page: PageData = JSON.parse(document.getElementById('lesson-data')!
 // Pipeline strip: light the stage boxes of the section nearest the top of the screen.
 const boxes = [...document.querySelectorAll<HTMLElement>('.pipe .box')];
 const secs = [...document.querySelectorAll<HTMLElement>('section.sec')];
+// Only touches the strip's own horizontal scroll, and only when the section changes: calling
+// scrollIntoView on every scroll event fought the page's own scrolling on phones.
+const strip = document.querySelector<HTMLElement>('.pipe');
+let lastSec: HTMLElement | undefined | null = null;
+let queued = false;
 function light() {
+  queued = false;
   const y = innerHeight * 0.35;
   let cur: HTMLElement | undefined;
   for (const s of secs) if (s.getBoundingClientRect().top <= y) cur = s;
+  if (cur === lastSec) return;
+  lastSec = cur;
   const on = new Set((cur?.dataset.stage || '').split(' ').filter(Boolean));
   for (const b of boxes) b.classList.toggle('on', on.has(b.dataset.stage!));
   const first = boxes.find((b) => on.has(b.dataset.stage!));
-  if (first) first.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  if (strip && first && strip.scrollWidth > strip.clientWidth) {
+    strip.scrollTo({ left: first.offsetLeft - strip.clientWidth / 2 + first.offsetWidth / 2, behavior: 'smooth' });
+  }
 }
-addEventListener('scroll', light, { passive: true });
+addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(light); } }, { passive: true });
 light();
 
 // Symbol popover: any [data-sym] (prose <S>, symbol boxes, \sym{} in equations).
