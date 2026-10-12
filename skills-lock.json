@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "build-version": {
+      "source": "darrenkim05/skills",
+      "sourceType": "github",
+      "skillPath": "skills/build-version/SKILL.md",
+      "computedHash": "986937d2cf490bcd9fc6d9dabc2bb266dd9c29de327abc3424e12670e7e79757"
+    },
+    "plan-version": {
+      "source": "darrenkim05/skills",
+      "sourceType": "github",
+      "skillPath": "skills/plan-version/SKILL.md",
+      "computedHash": "947467ec69229ce5898ad9c96b2483255b06cf0fbb9327b4f22808d42d18247a"
+    }
+  }
+}
