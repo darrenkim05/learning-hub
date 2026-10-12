@@ -39,9 +39,16 @@ const SCALE = { x: 12, y: -40, w: 9, d: 80, r: 1 };     // p ruler on the beam, 
 const STOPS = [-44, 37];                                 // hard stops on the beam, 7 deep each
 const KNOB = [172, 0];
 
-const P = k.fitProjection(
-  [...k.boxCorners(PLATE, -PLATE_H - FOOT_H, 0), [0, 0, SLIDE_TOP + 4], [BEAM.x + BEAM.w, BEAM.y, SLIDE_TOP], [BEAM.x, BEAM.y + BEAM.d, SLIDE_TOP]],
-  WIDTH, HEIGHT, { pad: 26, azimuth: 38, elevation: 40 },
+// Two layouts share one model: a wide one, and a phone close-up that frames the carriage travel and
+// bridge (the plate's far ends are cropped) so the groove and scale stay readable at 390 px.
+const VARIANTS = {
+  wide: { width: WIDTH, height: HEIGHT, box: PLATE, pad: 26 },
+  phone: { width: 390, height: 400, box: { x: -128, y: -88, w: 256, d: 176 }, pad: 4 },
+};
+let P;
+const fitFor = (v) => k.fitProjection(
+  [...k.boxCorners(v.box, -PLATE_H - FOOT_H, 0), [0, 0, SLIDE_TOP + 4], [BEAM.x + BEAM.w, BEAM.y, SLIDE_TOP], [BEAM.x, BEAM.y + BEAM.d, SLIDE_TOP]],
+  v.width, v.height, { pad: v.pad, azimuth: 38, elevation: 40 },
 );
 const at = (p) => k.iso(p, P);
 const Sd = (paths, style) => k.solidSvg(paths, style);
@@ -160,8 +167,11 @@ function pointer() { // fixed index on the front post, reading the score ruler
 }
 
 const z0 = 1.7;
-const svg = k.figureSvg({
-  width: WIDTH, height: HEIGHT,
+const makeSvg = (name) => {
+  const v = VARIANTS[name];
+  P = fitFor(v);
+  return k.figureSvg({
+  width: v.width, height: v.height, className: "v-" + name,
   label: "A cam plotter. A carriage on two rails slides left and right by the score z. Cut into its top is a groove shaped like the sigmoid curve. A follower on a fixed bridge has a pin in the groove, so as the carriage moves the follower is pushed across a scale from 0 to 1. Hard stops sit just outside 0 and 1; the follower never reaches them.",
   body: [
     base(), rails(), post(POSTS[0]),
@@ -171,24 +181,29 @@ const svg = k.figureSvg({
     `<g data-part="follower" transform="${k.translateAlong(P, [0, camY(z0), 0])}">${follower()}</g>`,
     post(POSTS[1]), pointer(),
   ],
-});
+  }).replace("<svg", `<svg data-p='${JSON.stringify(P)}'`);
+};
+const svg = makeSvg("wide") + makeSvg("phone");
 
 const live = `
-const P = ${JSON.stringify(P)};
 const S = ${S}, Y0 = ${Y0}, W = ${W}, Z_MAX = ${Z_MAX};
 const sigma = (z) => 1 / (1 + Math.exp(-z));
 const stage = document.querySelector(".iso-stage");
-const svg = stage.querySelector("svg");
-const carriage = svg.querySelector('[data-part="carriage"]');
-const parts = [svg.querySelector('[data-part="stylus"]'), svg.querySelector('[data-part="follower"]')];
+const views = [...stage.querySelectorAll("svg")].map((el) => ({
+  el, P: JSON.parse(el.dataset.p), carriage: el.querySelector('[data-part="carriage"]'),
+  parts: [el.querySelector('[data-part="stylus"]'), el.querySelector('[data-part="follower"]')],
+}));
 const readout = document.querySelector("[data-readout]");
 const still = matchMedia("(prefers-reduced-motion: reduce)");
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 let z = ${z0}, target = z, clock = 0, last = 0, frame = 0, touring = !still.matches, visible = false, idle = 0;
 function draw() {
   const p = sigma(z);
-  carriage.setAttribute("transform", translateAlong(P, [-z * S, 0, 0]));
-  for (const g of parts) g.setAttribute("transform", translateAlong(P, [0, Y0 + W * p, 0]));
+  for (const v of views) {
+    if (!v.el.getClientRects().length) continue; // only the visible layout
+    v.carriage.setAttribute("transform", translateAlong(v.P, [-z * S, 0, 0]));
+    for (const g of v.parts) g.setAttribute("transform", translateAlong(v.P, [0, Y0 + W * p, 0]));
+  }
   const text = "z = " + (z < 0 ? "−" : "+") + Math.abs(z).toFixed(2) + "  →  p = σ(z) = " + p.toFixed(3);
   if (readout.textContent !== text) readout.textContent = text;
   stage.setAttribute("aria-valuenow", z.toFixed(2));
@@ -210,9 +225,11 @@ const steer = (next) => {
   run();
 };
 new IntersectionObserver((e) => { visible = e[e.length - 1].isIntersecting; if (visible) run(); }, { rootMargin: "120px 0px" }).observe(stage);
-const fromX = (clientX) => { const b = svg.getBoundingClientRect(); return -(clamp((clientX - b.left) / b.width, 0.08, 0.92) - 0.5) / 0.42 * Z_MAX; };
-stage.addEventListener("pointermove", (e) => steer(fromX(e.clientX)));
+const shown = () => views.find((v) => v.el.getClientRects().length) || views[0];
+const fromX = (clientX) => { const b = shown().el.getBoundingClientRect(); return -(clamp((clientX - b.left) / b.width, 0.08, 0.92) - 0.5) / 0.42 * Z_MAX; };
+stage.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse" || e.buttons) steer(fromX(e.clientX)); });
 stage.addEventListener("pointerdown", (e) => steer(fromX(e.clientX)));
+addEventListener("resize", draw);
 stage.addEventListener("keydown", (e) => {
   const step = e.shiftKey ? 2 : 0.5;
   let to = null;
@@ -230,7 +247,7 @@ draw();
 const body = k.plateHtml({
   fig: "Fig 1",
   title: "Sigmoid cam",
-  hint: "Drag the carriage · ↑ ↓ keys",
+  hint: "Drag sideways to move the carriage",
   readout: `z = +${z0.toFixed(2)}  →  p = σ(z) = ${sigma(z0).toFixed(3)}`,
   keys: [
     { mark: "lit", label: "Pin and index: the probability p it reads off" },
@@ -238,7 +255,7 @@ const body = k.plateHtml({
   ],
   caption:
     "The carriage slides by the score z, as far as you like along its rails. The pin can only follow the groove, and the groove is the sigmoid: steep near z = 0, almost flat beyond |z| ≈ 5. So any score lands between the stops at 0 and 1, and the pin never touches either one: σ(−6.5) = 0.0015, σ(+6.5) = 0.9985.",
-  body: `<div class="iso-stage" tabindex="0" role="slider" aria-label="Sigmoid cam: up and down arrows change the score z; the carriage moves the other way under the pin" aria-valuemin="${-Z_MAX}" aria-valuemax="${Z_MAX}" aria-valuenow="${z0}">${svg}</div>`,
+  body: `<style>.iso-stage{touch-action:pan-y}.iso-stage svg.v-phone{display:none}@media (max-width:560px){.iso-stage svg.v-wide{display:none}.iso-stage svg.v-phone{display:block}}</style><div class="iso-stage" tabindex="0" role="slider" aria-label="Sigmoid cam: up and down arrows change the score z; the carriage moves the other way under the pin" aria-valuemin="${-Z_MAX}" aria-valuemax="${Z_MAX}" aria-valuenow="${z0}">${svg}</div>`,
 });
 
 mkdirSync(OUT, { recursive: true });
