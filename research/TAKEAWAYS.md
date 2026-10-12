@@ -97,6 +97,11 @@ Pages should make you think hard about the idea and nothing else.
 
 **What doesn't work:** rereading, highlighting, summarising, passive watching, and judging learning by how confident you feel.
 
+## E. Build gotchas
+
+- KaTeX CSS must match the KaTeX version `rehype-katex` renders with (pinned 0.16.47). A mismatch keeps the markup but drops subscript and superscript positions, so w₁ shows as "w1".
+- Headless worker screenshots can look right while the page is wrong. Judge maths screenshots at 2x and check that subscripts really sit low.
+
 ## Sources added this round
 - Bastani et al. (2025), Generative AI without guardrails can harm learning, PNAS. https://papers.ssrn.com/abstract=4895486
 - Pretesting effect: feedback and timing (2025). https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12292081/
