@@ -57,3 +57,39 @@ a.card:hover,a.card:focus{border-color:var(--yellow)}
 .sym-pop{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:60;max-width:520px;margin:0 auto;background:var(--panel2);border:1px solid var(--yellow);border-radius:var(--r);padding:12px 14px;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none}
 .sym-pop.show{display:block}
 .sym-pop .x{float:right;background:none;border:0;color:var(--muted);font-size:18px}
+
+/* badge + flags + selection toolbar */
+.badge{font-size:13px;padding:3px 10px;border-radius:999px;border:1px solid var(--orange);color:var(--orange);text-decoration:none;white-space:nowrap}
+.flag{background:none;border:1px solid var(--line);border-radius:8px;padding:2px 8px;font-size:16px;opacity:.45;filter:grayscale(1)}
+.flag.on{opacity:1;filter:none;border-color:var(--red)}
+.seltool{position:fixed;left:0;right:0;bottom:0;z-index:50;display:none;gap:8px;justify-content:center;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--panel2);border-top:1px solid var(--yellow)}
+.seltool.show{display:flex}
+.seltool button{background:var(--panel);border:1px solid var(--yellow);color:var(--text);border-radius:999px;padding:8px 18px}
+
+/* quiz / next-line */
+.qz{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:18px 0}
+.qz[data-attempted="1"]{border-color:var(--green)}
+.qz-q>:first-child{margin-top:0}
+.qz-opt{margin:8px 0}
+.qz-pick{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-x:auto}
+.qz-pick .katex-display{margin:0}
+.qz:not(.done) .qz-pick:active{border-color:var(--yellow)}
+.qz.done .qz-pick{cursor:default}
+.qz-opt.right .qz-pick{border-color:var(--green)}
+.qz-opt.wrong .qz-pick{border-color:var(--red)}
+.qz-why{font-size:15px;color:var(--muted);padding:4px 4px 0}
+.qz-opt.right .qz-why::before{content:"Right. ";color:var(--green);font-weight:700}
+.qz-opt.wrong .qz-why::before{content:"Not quite. ";color:var(--red);font-weight:700}
+.qz-bar{display:flex;gap:8px;margin-top:6px}
+.qz-bar button{background:none;border:0;color:var(--muted);text-decoration:underline;padding:4px 0;font-size:14px}
+
+/* review */
+.rv-lesson{margin:26px 0 6px;font-size:20px}
+.rv-concept{margin:14px 0 4px;color:var(--yellow);font-size:15px}
+.rv-concept small{display:block;color:var(--muted);font-size:13px}
+.rv-item{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:15px;display:flex;gap:10px;align-items:flex-start}
+.rv-item>div{flex:1;min-width:0}
+.rv-item blockquote{margin:0 0 2px;padding-left:8px;border-left:2px solid var(--red);color:var(--muted)}
+.rv-item button,.rv-tools button,.rv-tools label{background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);padding:2px 10px;font-size:13px;cursor:pointer}
+.rv-tools{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.rv-tools input{display:none}

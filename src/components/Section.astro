@@ -21,6 +21,7 @@ const tex = (k: string) => katex.renderToString(symTex(k, L.symbols[k]), { throw
   <div class="sec-head">
     <h2>{title}</h2>
     <slot name="head" />
+    <button type="button" class="flag" data-flag={id} aria-label="Flag this section as not yet understood" aria-pressed="false">🚩</button>
   </div>
   {symbols.length > 0 && (
     <details class="symbox" open>

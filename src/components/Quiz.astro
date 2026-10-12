@@ -1,0 +1,26 @@
+---
+// Multiple-choice question. Wrong options' `why` names the misconception. Never blocks scrolling.
+// Question text: default slot (MDX maths works) or the `q` prop. Option text/why may contain $maths$.
+import { ctx, need } from '../lib/lessons';
+import { inlineTex } from '../lib/tex';
+interface Props { id: string; concept: string; q?: string; options: { text: string; ok?: boolean; why: string }[] }
+const { id, concept, q, options } = Astro.props;
+const L = ctx(Astro.locals);
+need('concept', concept, L.concepts, L.slug);
+if (options.filter((o) => o.ok).length !== 1) throw new Error(`[${L.slug}] Quiz "${id}" needs exactly one ok option`);
+---
+<div class="qz" data-kind="quiz" data-q={id} data-concept={`${L.slug}/${concept}`} data-attempted="0">
+  <div class="qz-q"><slot />{q && <p set:html={inlineTex(q)} />}</div>
+  <div class="qz-opts">
+    {options.map((o, i) => (
+      <div class="qz-opt" data-i={i} data-ok={o.ok ? '1' : '0'}>
+        <button type="button" class="qz-pick" set:html={inlineTex(o.text)} />
+        <div class="qz-why" hidden set:html={inlineTex(o.why)} />
+      </div>
+    ))}
+  </div>
+  <div class="qz-bar">
+    <button type="button" class="qz-show">Just show me</button>
+    <button type="button" class="qz-retry" hidden>Try again</button>
+  </div>
+</div>

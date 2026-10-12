@@ -1,0 +1,85 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+const lessons = await getCollection('lessons');
+const data = Object.fromEntries(lessons.map((l) => [l.id, { title: l.data.title, concepts: l.data.concepts }]));
+---
+<Base title="Review">
+  <h1>Review</h1>
+  <p class="muted">What you flagged or got wrong. Stays until you clear it.</p>
+  <div class="rv-tools">
+    <button type="button" id="rv-export">Export JSON</button>
+    <label>Import JSON<input type="file" id="rv-import" accept="application/json,.json" /></label>
+    <button type="button" id="rv-clear">Clear all</button>
+  </div>
+  <div id="rv"></div>
+  <script type="application/json" id="review-data" set:html={JSON.stringify(data)} />
+</Base>
+
+<script>
+  import { store, wrongNow, type Flag, type Attempt } from '../lib/store';
+  const lessons: Record<string, { title: string; concepts: Record<string, string> }> =
+    JSON.parse(document.getElementById('review-data')!.textContent!);
+  const root = document.getElementById('rv')!;
+  const esc = (s = '') => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+  type Item = { kind: 'flag'; f: Flag } | { kind: 'wrong'; a: Attempt };
+  const link = (page: string, sec: string) => `/lessons/${page}/${sec ? '#' + encodeURIComponent(sec) : ''}`;
+
+  function render() {
+    const d = store.load();
+    // lesson -> concept key -> items
+    const tree: Record<string, Record<string, Item[]>> = {};
+    const put = (page: string, concept: string | undefined, it: Item) =>
+      ((tree[page] ??= {})[(concept || '').split('/').pop() || ''] ??= []).push(it);
+    for (const f of d.flags) put(f.page, f.concept, { kind: 'flag', f });
+    for (const a of wrongNow(d.attempts)) put(a.page, a.concept, { kind: 'wrong', a });
+
+    const pages = Object.keys(tree);
+    if (!pages.length) { root.innerHTML = '<p class="muted">Nothing shaky. Flag a section or select text and tap Not yet.</p>'; return; }
+    root.innerHTML = pages.map((p) => {
+      const L = lessons[p];
+      return `<h2 class="rv-lesson"><a href="${link(p, '')}">${esc(L?.title ?? p)}</a></h2>` +
+        Object.entries(tree[p]).map(([c, items]) =>
+          `<div class="rv-concept">${esc(c || 'General')}${L?.concepts[c] ? `<small>${esc(L.concepts[c])}</small>` : ''}</div>` +
+          items.map((it) => {
+            if (it.kind === 'flag') {
+              const f = it.f;
+              return `<div class="rv-item"><div>${f.text ? `<blockquote>${esc(f.text)}</blockquote>` : 'Flagged section'} ` +
+                `<a href="${link(f.page, f.section)}">${esc(f.section || 'open')}</a></div>` +
+                `<button data-flag="${f.at}" data-page="${esc(f.page)}">Clear</button></div>`;
+            }
+            const a = it.a;
+            return `<div class="rv-item"><div>${a.shown ? 'Asked to be shown' : 'Wrong'}: <a href="${link(a.page, a.q)}">${esc(a.q)}</a>` +
+              `${a.misconception ? `<br><span class="muted">${esc(a.misconception)}</span>` : ''}</div>` +
+              `<button data-q="${esc(a.q)}" data-page="${esc(a.page)}">Clear</button></div>`;
+          }).join('')).join('');
+    }).join('');
+  }
+
+  root.addEventListener('click', (e) => {
+    const b = (e.target as Element).closest<HTMLElement>('button');
+    if (!b) return;
+    if (b.dataset.flag) {
+      const f = store.load().flags.find((x) => String(x.at) === b.dataset.flag && x.page === b.dataset.page);
+      if (f) store.clearFlag(f);
+    } else if (b.dataset.q) store.clearAttempts(b.dataset.page, b.dataset.q);
+  });
+  document.getElementById('rv-clear')!.onclick = () => {
+    if (!confirm('Clear all flags and wrong answers?')) return;
+    const d = store.load(); d.flags = []; d.attempts = []; store.save(d);
+  };
+  document.getElementById('rv-export')!.onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([store.exportJSON()], { type: 'application/json' }));
+    a.download = 'learning-hub-memory.json';
+    a.click();
+  };
+  document.getElementById('rv-import')!.onchange = async (e) => {
+    const f = (e.target as HTMLInputElement).files?.[0];
+    if (!f) return;
+    try { await store.importJSON(f); } catch (err) { alert(String(err)); }
+  };
+  store.onChange(render);
+  render();
+</script>

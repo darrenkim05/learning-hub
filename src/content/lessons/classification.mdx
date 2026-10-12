@@ -18,6 +18,8 @@ ref: "Bishop, PRML §4.3"
 ---
 import Section from '../../components/Section.astro';
 import S from '../../components/S.astro';
+import Quiz from '../../components/Quiz.astro';
+import NextLine from '../../components/NextLine.astro';
 
 <Section id="s1" title="A score, then a probability" stage={['model', 'prediction']} concepts={['score', 'sigmoid']} symbols={['z', 'w', 'x', 'b', 'p']} example="new">
 
@@ -28,5 +30,35 @@ $$
 $$
 
 Tap any dotted symbol to see what it means. Scroll and watch the strip at the top: this section changes the **model** and the **prediction**.
+
+</Section>
+
+<Section id="s2" title="Check yourself" stage={['prediction']} concepts={['sigmoid']} example="same">
+
+<Quiz id="sigma0" concept="sigmoid" options={[
+  { text: '$0$', why: 'You are treating the sigmoid like a plain pass-through of z. It squashes into (0, 1), so it never outputs 0 or less.' },
+  { text: '$0.5$', ok: true, why: 'With z = 0, e^0 = 1, so the sigma is 1/(1+1) = 0.5: exactly on the boundary, undecided between the classes.' },
+  { text: '$1$', why: 'This is the limit as z goes to +infinity. At z = 0 the exponential is e^0 = 1, not 0, so the denominator is 2.' },
+  { text: '$\\tfrac{1}{e}$', why: 'You replaced 1 + e^0 with e. The exponent is zero, so e^0 = 1 and the denominator is 1 + 1 = 2.' },
+]}>
+
+What is $\sigma(0)$, where $\sigma(z) = \dfrac{1}{1 + e^{-z}}$?
+
+</Quiz>
+
+Now one step of the derivative. Write $\sigma(z) = (1 + e^{-z})^{-1}$.
+
+<NextLine id="dsigma-step" concept="sigmoid" options={[
+  { tex: "\\sigma'(z) = -(1 + e^{-z})^{-2}\\cdot(-e^{-z}) = \\dfrac{e^{-z}}{(1 + e^{-z})^{2}}", ok: true, why: 'Power rule on the outside, then the chain rule: the inner derivative of 1 + e^{-z} is -e^{-z}, and the two minus signs cancel.' },
+  { tex: "\\sigma'(z) = -(1 + e^{-z})^{-2}\\cdot e^{-z}", why: 'You dropped the minus sign from the chain rule: the inner derivative of e^{-z} is -e^{-z}, not e^{-z}.' },
+  { tex: "\\sigma'(z) = -(1 + e^{-z})^{-2}", why: 'You forgot the chain rule: after the power rule you still multiply by the derivative of the inside.' },
+  { tex: "\\sigma'(z) = (1 + e^{-z})^{-2}\\cdot(-e^{-z})", why: 'You lost the minus sign from the power rule (the exponent -1 comes down as a factor of -1).' },
+]}>
+
+$$\sigma(z) = (1 + e^{-z})^{-1}$$
+
+</NextLine>
+
+That fraction simplifies to $\sigma(z)\,(1-\sigma(z))$, which is why training with the sigmoid is cheap.
 
 </Section>

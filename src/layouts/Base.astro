@@ -17,9 +17,14 @@ const { title } = Astro.props;
     <a class="home" href="/">Learning Hub</a>
     <span class="grow"></span>
     <slot name="header" />
+    <a class="badge" id="shaky" href="/review">0 shaky</a>
   </header>
   <slot name="strip" />
   <main class="wrap"><slot /></main>
   <slot name="end" />
 </body>
 </html>
+
+<script>
+  import '../lib/badge';
+</script>
