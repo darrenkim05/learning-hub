@@ -1,0 +1,86 @@
+---
+// A static SVG figure that must carry a task (build fails without one). No animation, no stored data.
+//   task="predict": the figure is hidden until you pick a guess (choices, exactly one ok). Needs `choices`.
+//   task="label":   tap a part of the figure. SVG parts are <g data-part="id" class="fg-part">; `answer` is the id, `hint` for a miss.
+//   task="whatif":  question under the figure; "Think first" reveals `reveal`. SVG bits with class "fg-reveal" appear then.
+// Colour SVG with the role classes: class="r-weight" etc. (same colours as the maths).
+// `prompt`, choice text and `reveal` may contain $maths$.
+import { inlineTex } from '../lib/tex';
+interface Choice { text: string; ok?: boolean; why: string }
+interface Props {
+  task: 'predict' | 'label' | 'whatif';
+  prompt: string; reveal: string; alt: string;
+  choices?: Choice[]; answer?: string; hint?: string;
+}
+const { task, prompt, reveal, alt, choices = [], answer, hint } = Astro.props;
+if (!['predict', 'label', 'whatif'].includes(task)) throw new Error(`Figure needs task="predict|label|whatif", got "${task}"`);
+if (task === 'predict' && choices.filter((c) => c.ok).length !== 1) throw new Error('Figure predict: needs choices with exactly one ok');
+const svg = await Astro.slots.render('default');
+if (!svg.includes('<svg')) throw new Error('Figure: put an <svg> inside');
+if (task === 'label') {
+  if (!answer || !hint) throw new Error('Figure label: needs answer and hint');
+  if (!svg.includes(`data-part="${answer}"`)) throw new Error(`Figure label: no data-part="${answer}" in the svg`);
+}
+const kicker = { predict: 'Predict', label: 'Tap it', whatif: 'What if' }[task];
+---
+<figure class="fg" data-task={task} data-answer={answer} data-state={task === 'predict' ? 'hidden' : 'open'}>
+  <b class="fg-k">{kicker}</b>
+  {task !== 'whatif' && <p class="fg-prompt" set:html={inlineTex(prompt)} />}
+  {task === 'predict' && (
+    <div class="fg-opts">
+      {choices.map((c) => (
+        <div class="fg-opt" data-ok={c.ok ? '1' : '0'}>
+          <button type="button" class="fg-pick" set:html={inlineTex(c.text)} />
+          <div class="fg-why" hidden set:html={inlineTex(c.why)} />
+        </div>
+      ))}
+    </div>
+  )}
+  <div class="fg-art" role="img" aria-label={alt} hidden={task === 'predict'} set:html={svg} />
+  {task === 'whatif' && <p class="fg-prompt" set:html={inlineTex(prompt)} />}
+  <p class="fg-hint" hidden set:html={hint ? inlineTex(hint) : ''} />
+  <div class="fg-ans" hidden>
+    <span class="fg-ans-k">The point</span>
+    <span set:html={inlineTex(reveal)} />
+  </div>
+  <div class="fg-bar">
+    <button type="button" class="fg-go">{task === 'whatif' ? 'Think first, then reveal' : 'Just show me'}</button>
+  </div>
+</figure>
+<script>
+  for (const f of document.querySelectorAll<HTMLElement>('.fg')) {
+    const $ = <T extends HTMLElement>(s: string) => f.querySelector<T>(s)!;
+    const done = () => {
+      f.dataset.state = 'done';
+      $('.fg-art').hidden = false;
+      $('.fg-ans').hidden = false;
+      $('.fg-hint').hidden = true;
+      $('.fg-bar').hidden = true;
+      const a = f.dataset.answer;
+      if (a) f.querySelector(`[data-part="${a}"]`)?.classList.add('right');
+    };
+    f.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('.fg-go')) return done();
+      const opt = t.closest<HTMLElement>('.fg-pick')?.parentElement;
+      if (opt && f.dataset.state === 'hidden') {
+        for (const o of f.querySelectorAll<HTMLElement>('.fg-opt')) {
+          if (o === opt || o.dataset.ok === '1') {
+            o.classList.add(o.dataset.ok === '1' ? 'right' : 'wrong');
+            o.querySelector<HTMLElement>('.fg-why')!.hidden = false;
+          }
+        }
+        return done();
+      }
+      const part = t.closest<HTMLElement>('[data-part]');
+      if (part && f.dataset.task === 'label' && f.dataset.state === 'open') {
+        if (part.dataset.part === f.dataset.answer) { part.classList.add('right'); done(); }
+        else { part.classList.add('wrong'); $('.fg-hint').hidden = false; }
+      }
+    });
+    f.addEventListener('keydown', (e) => {
+      const p = (e.target as HTMLElement).closest('[data-part]');
+      if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); (p as HTMLElement).click(); }
+    });
+  }
+</script>
